@@ -1,0 +1,522 @@
+version: '3'
+
+services:
+  workspace:
+    build:
+      context: ./workspace
+      args:
+        - BASE_IMAGE_TAG_PREFIX=${WORKSPACE_BASE_IMAGE_TAG_PREFIX}
+        - SPACEDOCK_PHP_VERSION=${PHP_VERSION}
+        - INSTALL_BZ2=${WORKSPACE_INSTALL_BZ2}
+        - INSTALL_GMP=${WORKSPACE_INSTALL_GMP}
+        - INSTALL_GNUPG=${WORKSPACE_INSTALL_GNUPG}
+        - INSTALL_XDEBUG=${WORKSPACE_INSTALL_XDEBUG}
+        - INSTALL_PCOV=${WORKSPACE_INSTALL_PCOV}
+        - INSTALL_PHPDBG=${WORKSPACE_INSTALL_PHPDBG}
+        - INSTALL_SSH2=${WORKSPACE_INSTALL_SSH2}
+        - INSTALL_SOAP=${WORKSPACE_INSTALL_SOAP}
+        - INSTALL_XSL=${WORKSPACE_INSTALL_XSL}
+        - INSTALL_LDAP=${WORKSPACE_INSTALL_LDAP}
+        - INSTALL_SMB=${WORKSPACE_INSTALL_SMB}
+        - INSTALL_IMAP=${WORKSPACE_INSTALL_IMAP}
+        - INSTALL_AMQP=${WORKSPACE_INSTALL_AMQP}
+        - INSTALL_PHPREDIS=${WORKSPACE_INSTALL_PHPREDIS}
+        - NVM_NODEJS_ORG_MIRROR=${WORKSPACE_NVM_NODEJS_ORG_MIRROR}
+        - INSTALL_NODE=${WORKSPACE_INSTALL_NODE}
+        - NPM_REGISTRY=${WORKSPACE_NPM_REGISTRY}
+        - NPM_FETCH_RETRIES=${WORKSPACE_NPM_FETCH_RETRIES}
+        - NPM_FETCH_RETRY_FACTOR=${WORKSPACE_NPM_FETCH_RETRY_FACTOR}
+        - NPM_FETCH_RETRY_MINTIMEOUT=${WORKSPACE_NPM_FETCH_RETRY_MINTIMEOUT}
+        - NPM_FETCH_RETRY_MAXTIMEOUT=${WORKSPACE_NPM_FETCH_RETRY_MAXTIMEOUT}
+        - INSTALL_PNPM=${WORKSPACE_INSTALL_PNPM}
+        - INSTALL_YARN=${WORKSPACE_INSTALL_YARN}
+        - INSTALL_NPM_GULP=${WORKSPACE_INSTALL_NPM_GULP}
+        - INSTALL_NPM_BOWER=${WORKSPACE_INSTALL_NPM_BOWER}
+        - INSTALL_NPM_VUE_CLI=${WORKSPACE_INSTALL_NPM_VUE_CLI}
+        - INSTALL_OCI8=${WORKSPACE_INSTALL_OCI8}
+        - INSTALL_V8JS=${WORKSPACE_INSTALL_V8JS}
+        - COMPOSER_GLOBAL_INSTALL=${WORKSPACE_COMPOSER_GLOBAL_INSTALL}
+        - COMPOSER_VERSION=${WORKSPACE_COMPOSER_VERSION}
+        - COMPOSER_AUTH=${WORKSPACE_COMPOSER_AUTH}
+        - COMPOSER_REPO_PACKAGIST=${WORKSPACE_COMPOSER_REPO_PACKAGIST}
+        - INSTALL_WORKSPACE_SSH=${WORKSPACE_INSTALL_WORKSPACE_SSH}
+        - INSTALL_LARAVEL_ENVOY=${WORKSPACE_INSTALL_LARAVEL_ENVOY}
+        - INSTALL_LARAVEL_INSTALLER=${WORKSPACE_INSTALL_LARAVEL_INSTALLER}
+        - INSTALL_DEPLOYER=${WORKSPACE_INSTALL_DEPLOYER}
+        - INSTALL_PRESTISSIMO=${WORKSPACE_INSTALL_PRESTISSIMO}
+        - INSTALL_LINUXBREW=${WORKSPACE_INSTALL_LINUXBREW}
+        - INSTALL_MC=${WORKSPACE_INSTALL_MC}
+        - INSTALL_SYMFONY=${WORKSPACE_INSTALL_SYMFONY}
+        - INSTALL_PYTHON=${WORKSPACE_INSTALL_PYTHON}
+        - INSTALL_PYTHON3=${WORKSPACE_INSTALL_PYTHON3}
+        - INSTALL_IMAGE_OPTIMIZERS=${WORKSPACE_INSTALL_IMAGE_OPTIMIZERS}
+        - INSTALL_IMAGEMAGICK=${WORKSPACE_INSTALL_IMAGEMAGICK}
+        - INSTALL_TERRAFORM=${WORKSPACE_INSTALL_TERRAFORM}
+        - INSTALL_DUSK_DEPS=${WORKSPACE_INSTALL_DUSK_DEPS}
+        - INSTALL_PG_CLIENT=${WORKSPACE_INSTALL_PG_CLIENT}
+        - INSTALL_SWOOLE=${WORKSPACE_INSTALL_SWOOLE}
+        - INSTALL_TAINT=${WORKSPACE_INSTALL_TAINT}
+        - INSTALL_LIBPNG=${WORKSPACE_INSTALL_LIBPNG}
+        - INSTALL_GRAPHVIZ=${WORKSPACE_INSTALL_GRAPHVIZ}
+        - INSTALL_IONCUBE=${WORKSPACE_INSTALL_IONCUBE}
+        - INSTALL_MYSQL_CLIENT=${WORKSPACE_INSTALL_MYSQL_CLIENT}
+        - INSTALL_PING=${WORKSPACE_INSTALL_PING}
+        - INSTALL_SSHPASS=${WORKSPACE_INSTALL_SSHPASS}
+        - INSTALL_INOTIFY=${WORKSPACE_INSTALL_INOTIFY}
+        - INSTALL_FSWATCH=${WORKSPACE_INSTALL_FSWATCH}
+        - INSTALL_AST=${WORKSPACE_INSTALL_AST}
+        - INSTALL_YAML=${WORKSPACE_INSTALL_YAML}
+        - INSTALL_MAILPARSE=${WORKSPACE_INSTALL_MAILPARSE}
+        - INSTALL_GIT_PROMPT=${WORKSPACE_INSTALL_GIT_PROMPT}
+        - INSTALL_XMLRPC=${WORKSPACE_INSTALL_XMLRPC}
+        - PUID=${WORKSPACE_PUID}
+        - PGID=${WORKSPACE_PGID}
+        - CHROME_DRIVER_VERSION=${WORKSPACE_CHROME_DRIVER_VERSION}
+        - NODE_VERSION=${WORKSPACE_NODE_VERSION}
+        - YARN_VERSION=${WORKSPACE_YARN_VERSION}
+        - AST_VERSION=${WORKSPACE_AST_VERSION}
+        - IMAGEMAGICK_VERSION=${WORKSPACE_IMAGEMAGICK_VERSION}
+        - TZ=${WORKSPACE_TIMEZONE}
+        - INSTALL_POWERLINE=${WORKSPACE_INSTALL_POWERLINE}
+        - INSTALL_SUPERVISOR=${WORKSPACE_INSTALL_SUPERVISOR}
+        - INSTALL_FFMPEG=${WORKSPACE_INSTALL_FFMPEG}
+        - INSTALL_AUDIOWAVEFORM=${WORKSPACE_INSTALL_AUDIOWAVEFORM}
+        - INSTALL_WKHTMLTOPDF=${WORKSPACE_INSTALL_WKHTMLTOPDF}
+        - INSTALL_GNU_PARALLEL=${WORKSPACE_INSTALL_GNU_PARALLEL}
+        - INSTALL_LNAV=${WORKSPACE_INSTALL_LNAV}
+        - INSTALL_PROTOC=${WORKSPACE_INSTALL_PROTOC}
+        - INSTALL_PHPDECIMAL=${WORKSPACE_INSTALL_PHPDECIMAL}
+        - INSTALL_TRADER=${WORKSPACE_INSTALL_TRADER}
+        - PROTOC_VERSION=${WORKSPACE_PROTOC_VERSION}
+        - INSTALL_DOCKER_CLIENT=${WORKSPACE_INSTALL_DOCKER_CLIENT}
+        - INSTALL_MEMCACHED=${WORKSPACE_INSTALL_MEMCACHED}
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    volumes:
+      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+      - docker-in-docker:/certs/client
+      - ./php-worker/supervisord.d:/etc/supervisord.d
+    extra_hosts:
+      - "dockerhost:${DOCKER_HOST_IP}"
+    ports:
+      - "${WORKSPACE_SSH_PORT}:22"
+      - "${WORKSPACE_BROWSERSYNC_HOST_PORT}:3000"
+      - "${WORKSPACE_BROWSERSYNC_UI_HOST_PORT}:3001"
+      - "${WORKSPACE_VUE_CLI_SERVE_HOST_PORT}:8080"
+      - "${WORKSPACE_VUE_CLI_UI_HOST_PORT}:8000"
+    tty: true
+    environment:
+      - PHP_IDE_CONFIG=${PHP_IDE_CONFIG}
+      - DOCKER_HOST=tcp://docker-in-docker:2376
+      - DOCKER_TLS_VERIFY=1
+      - DOCKER_TLS_CERTDIR=/certs
+      - DOCKER_CERT_PATH=/certs/client
+      - CHOKIDAR_USEPOLLING=true
+    networks:
+      - frontend
+      - backend
+    links:
+      - docker-in-docker
+
+  php-fpm:
+    build:
+      context: ./php-fpm
+      args:
+        - CHANGE_SOURCE=${CHANGE_SOURCE}
+        - BASE_IMAGE_TAG_PREFIX=${PHP_FPM_BASE_IMAGE_TAG_PREFIX}
+        - SPACEDOCK_PHP_VERSION=${PHP_VERSION}
+        - INSTALL_BZ2=${PHP_FPM_INSTALL_BZ2}
+        - INSTALL_ENCHANT=${PHP_FPM_INSTALL_ENCHANT}
+        - INSTALL_GMP=${PHP_FPM_INSTALL_GMP}
+        - INSTALL_GNUPG=${PHP_FPM_INSTALL_GNUPG}
+        - INSTALL_XDEBUG=${PHP_FPM_INSTALL_XDEBUG}
+        - INSTALL_PCOV=${PHP_FPM_INSTALL_PCOV}
+        - INSTALL_PHPDBG=${PHP_FPM_INSTALL_PHPDBG}
+        - INSTALL_SSH2=${PHP_FPM_INSTALL_SSH2}
+        - INSTALL_SOAP=${PHP_FPM_INSTALL_SOAP}
+        - INSTALL_XSL=${PHP_FPM_INSTALL_XSL}
+        - INSTALL_SMB=${PHP_FPM_INSTALL_SMB}
+        - INSTALL_IMAP=${PHP_FPM_INSTALL_IMAP}
+        - INSTALL_AMQP=${PHP_FPM_INSTALL_AMQP}
+        - INSTALL_BCMATH=${PHP_FPM_INSTALL_BCMATH}
+        - INSTALL_PHPREDIS=${PHP_FPM_INSTALL_PHPREDIS}
+        - INSTALL_MEMCACHED=${PHP_FPM_INSTALL_MEMCACHED}
+        - INSTALL_OPCACHE=${PHP_FPM_INSTALL_OPCACHE}
+        - INSTALL_EXIF=${PHP_FPM_INSTALL_EXIF}
+        - INSTALL_OCI8=${PHP_FPM_INSTALL_OCI8}
+        - INSTALL_MYSQLI=${PHP_FPM_INSTALL_MYSQLI}
+        - INSTALL_PGSQL=${PHP_FPM_INSTALL_PGSQL}
+        - INSTALL_PG_CLIENT=${PHP_FPM_INSTALL_PG_CLIENT}
+        - INSTALL_POSTGIS=${PHP_FPM_INSTALL_POSTGIS}
+        - INSTALL_INTL=${PHP_FPM_INSTALL_INTL}
+        - INSTALL_GHOSTSCRIPT=${PHP_FPM_INSTALL_GHOSTSCRIPT}
+        - INSTALL_LDAP=${PHP_FPM_INSTALL_LDAP}
+        - INSTALL_SWOOLE=${PHP_FPM_INSTALL_SWOOLE}
+        - INSTALL_TAINT=${PHP_FPM_INSTALL_TAINT}
+        - INSTALL_IMAGE_OPTIMIZERS=${PHP_FPM_INSTALL_IMAGE_OPTIMIZERS}
+        - INSTALL_IMAGEMAGICK=${PHP_FPM_INSTALL_IMAGEMAGICK}
+        - INSTALL_CALENDAR=${PHP_FPM_INSTALL_CALENDAR}
+        - INSTALL_FAKETIME=${PHP_FPM_INSTALL_FAKETIME}
+        - INSTALL_IONCUBE=${PHP_FPM_INSTALL_IONCUBE}
+        - INSTALL_APCU=${PHP_FPM_INSTALL_APCU}
+        - INSTALL_CACHETOOL=${PHP_FPM_INSTALL_CACHETOOL}
+        - INSTALL_YAML=${PHP_FPM_INSTALL_YAML}
+        - INSTALL_GETTEXT=${PHP_FPM_INSTALL_GETTEXT}
+        - INSTALL_ADDITIONAL_LOCALES=${PHP_FPM_INSTALL_ADDITIONAL_LOCALES}
+        - INSTALL_MYSQL_CLIENT=${PHP_FPM_INSTALL_MYSQL_CLIENT}
+        - INSTALL_PING=${PHP_FPM_INSTALL_PING}
+        - INSTALL_SSHPASS=${PHP_FPM_INSTALL_SSHPASS}
+        - INSTALL_MAILPARSE=${PHP_FPM_INSTALL_MAILPARSE}
+        - INSTALL_PCNTL=${PHP_FPM_INSTALL_PCNTL}
+        - ADDITIONAL_LOCALES=${PHP_FPM_ADDITIONAL_LOCALES}
+        - INSTALL_FFMPEG=${PHP_FPM_FFMPEG}
+        - INSTALL_AUDIOWAVEFORM=${PHP_FPM_AUDIOWAVEFORM}
+        - INSTALL_WKHTMLTOPDF=${PHP_FPM_INSTALL_WKHTMLTOPDF}
+        - INSTALL_XHPROF=${PHP_FPM_INSTALL_XHPROF}
+        - INSTALL_XMLRPC=${PHP_FPM_INSTALL_XMLRPC}
+        - INSTALL_PHPDECIMAL=${PHP_FPM_INSTALL_PHPDECIMAL}
+        - INSTALL_TRADER=${PHP_FPM_INSTALL_TRADER}
+        - PUID=${PHP_FPM_PUID}
+        - PGID=${PHP_FPM_PGID}
+        - IMAGEMAGICK_VERSION=${PHP_FPM_IMAGEMAGICK_VERSION}
+        - LOCALE=${PHP_FPM_DEFAULT_LOCALE}
+        - PHP_FPM_NEW_RELIC=${PHP_FPM_NEW_RELIC}
+        - PHP_FPM_NEW_RELIC_KEY=${PHP_FPM_NEW_RELIC_KEY}
+        - PHP_FPM_NEW_RELIC_APP_NAME=${PHP_FPM_NEW_RELIC_APP_NAME}
+        - INSTALL_DOCKER_CLIENT=${PHP_FPM_INSTALL_DOCKER_CLIENT}
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    volumes:
+      - ./php-fpm/php${PHP_VERSION}.ini:/usr/local/etc/php/php.ini
+      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+      - docker-in-docker:/certs/client
+    ports:
+      - "${PHP_FPM_XDEBUG_PORT}:9003"
+    expose:
+      - "9000"
+    extra_hosts:
+      - "dockerhost:${DOCKER_HOST_IP}"
+    environment:
+      - PHP_IDE_CONFIG=${PHP_IDE_CONFIG}
+      - DOCKER_HOST=tcp://docker-in-docker:2376
+      - DOCKER_TLS_VERIFY=1
+      - DOCKER_TLS_CERTDIR=/certs
+      - DOCKER_CERT_PATH=/certs/client
+      - FAKETIME=${PHP_FPM_FAKETIME}
+    depends_on:
+      - workspace
+    networks:
+      - backend
+    links:
+      - docker-in-docker
+
+  laravel-horizon:
+    build:
+      context: ./laravel-horizon
+      args:
+        - CHANGE_SOURCE=${CHANGE_SOURCE}
+        - SPACEDOCK_PHP_VERSION=${PHP_VERSION}
+        - INSTALL_BZ2=${LARAVEL_HORIZON_INSTALL_BZ2}
+        - INSTALL_GD=${LARAVEL_HORIZON_INSTALL_GD}
+        - INSTALL_GMP=${LARAVEL_HORIZON_INSTALL_GMP}
+        - INSTALL_GNUPG=${LARAVEL_HORIZON_INSTALL_GNUPG}
+        - INSTALL_LDAP=${LARAVEL_HORIZON_INSTALL_LDAP}
+        - INSTALL_IMAGEMAGICK=${LARAVEL_HORIZON_INSTALL_IMAGEMAGICK}
+        - INSTALL_PGSQL=${PHP_FPM_INSTALL_PGSQL}
+        - INSTALL_ZIP_ARCHIVE=${LARAVEL_HORIZON_INSTALL_ZIP_ARCHIVE}
+        - INSTALL_BCMATH=${PHP_FPM_INSTALL_BCMATH}
+        - INSTALL_MEMCACHED=${PHP_FPM_INSTALL_MEMCACHED}
+        - INSTALL_SOCKETS=${LARAVEL_HORIZON_INSTALL_SOCKETS}
+        - INSTALL_YAML=${LARAVEL_HORIZON_INSTALL_YAML}
+        - INSTALL_PHPREDIS=${LARAVEL_HORIZON_INSTALL_PHPREDIS}
+        - INSTALL_FFMPEG=${LARAVEL_HORIZON_INSTALL_FFMPEG}
+        - INSTALL_AUDIOWAVEFORM=${LARAVEL_HORIZON_INSTALL_AUDIOWAVEFORM}
+        - PUID=${LARAVEL_HORIZON_PUID}
+        - PGID=${LARAVEL_HORIZON_PGID}
+        - IMAGEMAGICK_VERSION=${LARAVEL_HORIZON_IMAGEMAGICK_VERSION}
+    volumes:
+      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}
+      - ./laravel-horizon/supervisord.d:/etc/supervisord.d
+    depends_on:
+      - workspace
+    extra_hosts:
+      - "dockerhost:${DOCKER_HOST_IP}"
+    networks:
+      - backend
+
+  nginx:
+    build:
+      context: ./nginx
+      args:
+        - CHANGE_SOURCE=${CHANGE_SOURCE}
+        - PHP_UPSTREAM_CONTAINER=${NGINX_PHP_UPSTREAM_CONTAINER}
+        - PHP_UPSTREAM_PORT=${NGINX_PHP_UPSTREAM_PORT}
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    volumes:
+      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+      - ${NGINX_HOST_LOG_PATH}:/var/log/nginx
+      - ${NGINX_SITES_PATH}:/etc/nginx/sites-available
+      - ${NGINX_SSL_PATH}:/etc/nginx/ssl
+    ports:
+      - "${NGINX_HOST_HTTP_PORT}:80"
+      - "${NGINX_HOST_HTTPS_PORT}:443"
+      - "${VARNISH_BACKEND_PORT}:81"
+    depends_on:
+      - php-fpm
+    networks:
+      - frontend
+      - backend
+
+  apache2:
+    build:
+      context: ./apache2
+      args:
+        - PHP_UPSTREAM_CONTAINER=${APACHE_PHP_UPSTREAM_CONTAINER}
+        - PHP_UPSTREAM_PORT=${APACHE_PHP_UPSTREAM_PORT}
+        - PHP_UPSTREAM_TIMEOUT=${APACHE_PHP_UPSTREAM_TIMEOUT}
+        - DOCUMENT_ROOT=${APACHE_DOCUMENT_ROOT}
+        - APACHE_INSTALL_HTTP2=${APACHE_INSTALL_HTTP2}
+    volumes:
+      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+      - ${APACHE_HOST_LOG_PATH}:/var/log/apache2
+      - ${APACHE_SITES_PATH}:/etc/apache2/sites-available
+      - ${APACHE_SSL_PATH}:/etc/apache2/ssl
+    ports:
+      - "${APACHE_HOST_HTTP_PORT}:80"
+      - "${APACHE_HOST_HTTPS_PORT}:443"
+    depends_on:
+      - php-fpm
+    networks:
+      - frontend
+      - backend
+
+  mysql:
+    build:
+      context: ./mysql
+      args:
+        - MYSQL_VERSION=${MYSQL_VERSION}
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - TZ=${WORKSPACE_TIMEZONE}
+    volumes:
+      - ${DATA_PATH_HOST}/mysql:/var/lib/mysql
+      - ${MYSQL_ENTRYPOINT_INITDB}:/docker-entrypoint-initdb.d
+    ports:
+      - "${MYSQL_PORT}:3306"
+    networks:
+      - backend
+
+  mariadb:
+    build:
+      context: ./mariadb
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+        - MARIADB_VERSION=${MARIADB_VERSION}
+    volumes:
+      - ${DATA_PATH_HOST}/mariadb:/var/lib/mysql
+      - ${MARIADB_ENTRYPOINT_INITDB}:/docker-entrypoint-initdb.d
+    ports:
+      - "${MARIADB_PORT}:3306"
+    environment:
+      - TZ=${WORKSPACE_TIMEZONE}
+      - MYSQL_DATABASE=${MARIADB_DATABASE}
+      - MYSQL_USER=${MARIADB_USER}
+      - MYSQL_PASSWORD=${MARIADB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+    networks:
+      - backend
+
+  redis:
+    build: ./redis
+    volumes:
+      - ${DATA_PATH_HOST}/redis:/data
+    ports:
+      - "${REDIS_PORT}:6379"
+    networks:
+      - backend
+
+  memcached:
+    build: ./memcached
+    volumes:
+      - ${DATA_PATH_HOST}/memcached:/var/lib/memcached
+    ports:
+      - "${MEMCACHED_HOST_PORT}:11211"
+    depends_on:
+      - php-fpm
+    networks:
+      - backend
+
+  rabbitmq:
+    build: ./rabbitmq
+    ports:
+      - "${RABBITMQ_NODE_HOST_PORT}:5672"
+      - "${RABBITMQ_MANAGEMENT_HTTP_HOST_PORT}:15672"
+      - "${RABBITMQ_MANAGEMENT_HTTPS_HOST_PORT}:15671"
+      - "${RABBITMQ_WEB_STOMP_HOST_PORT}:15674"
+    privileged: true
+    hostname: spacedock-rabbitmq
+    volumes:
+      - ${DATA_PATH_HOST}/rabbitmq:/var/lib/rabbitmq
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - ./rabbitmq/management_agent.disable_metrics_collector.conf:/etc/rabbitmq/conf.d/management_agent.disable_metrics_collector.conf
+    depends_on:
+      - php-fpm
+    networks:
+      - backend
+
+  phpmyadmin:
+    build: ./phpmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+      - MYSQL_USER=${PMA_USER}
+      - MYSQL_PASSWORD=${PMA_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${PMA_ROOT_PASSWORD}
+      - MAX_EXECUTION_TIME=${PMA_MAX_EXECUTION_TIME}
+      - MEMORY_LIMIT=${PMA_MEMORY_LIMIT}
+      - UPLOAD_LIMIT=${PMA_UPLOAD_LIMIT}
+    ports:
+      - "${PMA_PORT}:80"
+    depends_on:
+      - "${PMA_DB_ENGINE}"
+    networks:
+      - frontend
+      - backend
+
+  adminer:
+    build:
+      context: ./adminer
+    environment:
+      - ADMINER_PLUGINS=${ADM_PLUGINS}
+      - ADMINER_DESIGN=${ADM_DESIGN}
+      - ADMINER_DEFAULT_SERVER=${ADM_DEFAULT_SERVER}
+    ports:
+      - "${ADM_PORT}:8080"
+    depends_on:
+      - php-fpm
+    networks:
+      - frontend
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.nginx.loadbalancer.server.port=80"
+      # https router
+      - "traefik.http.routers.https.rule=Host(`adminer.${ACME_DOMAIN}`, `www.adminer.${ACME_DOMAIN}`)"
+      - "traefik.http.routers.https.entrypoints=https"
+      - "traefik.http.routers.https.middlewares=www-redirectregex"
+      - "traefik.http.routers.https.service=nginx"
+      - "traefik.http.routers.https.tls.certresolver=letsencrypt"
+      # http router
+      - "traefik.http.routers.http.rule=Host(`adminer.${ACME_DOMAIN}`, `www.adminer.${ACME_DOMAIN}`)"
+      - "traefik.http.routers.http.entrypoints=http"
+      - "traefik.http.routers.http.middlewares=http-redirectscheme"
+      - "traefik.http.routers.http.service=nginx"
+      # middlewares
+      - "traefik.http.middlewares.www-redirectregex.redirectregex.permanent=true"
+      - "traefik.http.middlewares.www-redirectregex.redirectregex.regex=^https://www.(.*)"
+      - "traefik.http.middlewares.www-redirectregex.redirectregex.replacement=https://$$1"
+      - "traefik.http.middlewares.http-redirectscheme.redirectscheme.permanent=true"
+      - "traefik.http.middlewares.http-redirectscheme.redirectscheme.scheme=https"
+
+  laravel-echo-server:
+    build:
+      context: ./laravel-echo-server
+      args:
+        - CHANGE_SOURCE=${CHANGE_SOURCE}
+    volumes:
+      - ./laravel-echo-server/laravel-echo-server.json:/app/laravel-echo-server.json:ro
+    ports:
+      - "${LARAVEL_ECHO_SERVER_PORT}:6001"
+    links:
+      - redis
+    networks:
+      - frontend
+      - backend
+
+  traefik:
+    build:
+      context: ./traefik
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik/data:/data
+    command:
+      - "--api"
+      - "--providers.docker.exposedbydefault=false"
+      - "--accesslog.filepath=/data/access.log"
+      # entrypoints
+      - "--entrypoints.http.address=:${TRAEFIK_HOST_HTTP_PORT}"
+      - "--entrypoints.http.http.redirections.entrypoint.to=https"
+      - "--entrypoints.https.address=:${TRAEFIK_HOST_HTTPS_PORT}"
+      - "--entrypoints.traefik.address=:${TRAEFIK_DASHBOARD_PORT}"
+      # certificatesresolvers
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/data/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=http"
+    ports:
+      - "${TRAEFIK_HOST_HTTP_PORT}:${TRAEFIK_HOST_HTTP_PORT}"
+      - "${TRAEFIK_HOST_HTTPS_PORT}:${TRAEFIK_HOST_HTTPS_PORT}"
+      - "${TRAEFIK_DASHBOARD_PORT}:${TRAEFIK_DASHBOARD_PORT}"
+    networks:
+      - frontend
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`${ACME_DOMAIN}`)"
+      - "traefik.http.routers.traefik.entrypoints=traefik"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=access-auth"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.middlewares.access-auth.basicauth.realm=Login Required"
+      - "traefik.http.middlewares.access-auth.basicauth.users=${TRAEFIK_DASHBOARD_USER}"
+
+  swagger-editor:
+    build: ./swagger-editor
+    ports:
+      - ${SWAGGER_EDITOR_PORT}:8080
+    networks:
+      - backend
+
+  docker-in-docker:
+    image: docker:19.03-dind
+    environment:
+      DOCKER_TLS_SAN: DNS:docker-in-docker
+    privileged: true
+    volumes:
+      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}
+      - docker-in-docker:/certs/client
+    expose:
+      - 2375
+    networks:
+      - backend
+
+networks:
+  frontend:
+    driver: ${NETWORKS_DRIVER}
+  backend:
+    driver: ${NETWORKS_DRIVER}
+#  traefik:
+#    external: true
+
+volumes:
+  mysql:
+    driver: ${VOLUMES_DRIVER}
+  redis:
+    driver: ${VOLUMES_DRIVER}
+  memcached:
+    driver: ${VOLUMES_DRIVER}
+  mariadb:
+    driver: ${VOLUMES_DRIVER}
+  phpmyadmin:
+    driver: ${VOLUMES_DRIVER}
+  adminer:
+    driver: ${VOLUMES_DRIVER}
+  docker-in-docker:
+    driver: ${VOLUMES_DRIVER}
