@@ -1,4 +1,4 @@
 #!/bin/bash
 
-cd docker
+#cd docker
 exec docker-compose down
