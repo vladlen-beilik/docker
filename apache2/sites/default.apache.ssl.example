@@ -1,6 +1,6 @@
 <VirtualHost *:80>
-    ServerName spacedock.test
-    ServerAlias *.spacedock.test
+    ServerName laradock.test
+    ServerAlias *.laradock.test
 
     RewriteEngine On
     RewriteCond %{HTTPS} !on
@@ -8,8 +8,8 @@
 </VirtualHost>
 
 <VirtualHost *:443>
-    ServerName spacedock.test
-    ServerAlias *.spacedock.test
+    ServerName laradock.test
+    ServerAlias *.laradock.test
     DocumentRoot /var/www/
     Options Indexes FollowSymLinks
 

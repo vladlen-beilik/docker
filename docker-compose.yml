@@ -6,7 +6,10 @@ services:
       context: ./workspace
       args:
         - BASE_IMAGE_TAG_PREFIX=${WORKSPACE_BASE_IMAGE_TAG_PREFIX}
-        - SPACEDOCK_PHP_VERSION=${PHP_VERSION}
+        - SHELL_OH_MY_ZSH=${SHELL_OH_MY_ZSH}
+        - SHELL_OH_MY_ZSH_AUTOSUGESTIONS=${SHELL_OH_MY_ZSH_AUTOSUGESTIONS}
+        - SHELL_OH_MY_ZSH_ALIASES=${SHELL_OH_MY_ZSH_ALIASES}
+        - LARADOCK_PHP_VERSION=${PHP_VERSION}
         - INSTALL_BZ2=${WORKSPACE_INSTALL_BZ2}
         - INSTALL_GMP=${WORKSPACE_INSTALL_GMP}
         - INSTALL_GNUPG=${WORKSPACE_INSTALL_GNUPG}
@@ -45,7 +48,6 @@ services:
         - INSTALL_DEPLOYER=${WORKSPACE_INSTALL_DEPLOYER}
         - INSTALL_PRESTISSIMO=${WORKSPACE_INSTALL_PRESTISSIMO}
         - INSTALL_LINUXBREW=${WORKSPACE_INSTALL_LINUXBREW}
-        - INSTALL_MC=${WORKSPACE_INSTALL_MC}
         - INSTALL_SYMFONY=${WORKSPACE_INSTALL_SYMFONY}
         - INSTALL_PYTHON=${WORKSPACE_INSTALL_PYTHON}
         - INSTALL_PYTHON3=${WORKSPACE_INSTALL_PYTHON3}
@@ -124,7 +126,7 @@ services:
       context: ./php-fpm
       args:
         - BASE_IMAGE_TAG_PREFIX=${PHP_FPM_BASE_IMAGE_TAG_PREFIX}
-        - SPACEDOCK_PHP_VERSION=${PHP_VERSION}
+        - LARADOCK_PHP_VERSION=${PHP_VERSION}
         - INSTALL_BZ2=${PHP_FPM_INSTALL_BZ2}
         - INSTALL_ENCHANT=${PHP_FPM_INSTALL_ENCHANT}
         - INSTALL_GMP=${PHP_FPM_INSTALL_GMP}
@@ -212,7 +214,7 @@ services:
     build:
       context: ./php-worker
       args:
-        - SPACEDOCK_PHP_VERSION=${PHP_VERSION}
+        - LARADOCK_PHP_VERSION=${PHP_VERSION}
         - INSTALL_BZ2=${PHP_WORKER_INSTALL_BZ2}
         - INSTALL_GD=${PHP_WORKER_INSTALL_GD}
         - INSTALL_IMAGEMAGICK=${PHP_WORKER_INSTALL_IMAGEMAGICK}
@@ -252,7 +254,7 @@ services:
     build:
       context: ./laravel-horizon
       args:
-        - SPACEDOCK_PHP_VERSION=${PHP_VERSION}
+        - LARADOCK_PHP_VERSION=${PHP_VERSION}
         - INSTALL_BZ2=${LARAVEL_HORIZON_INSTALL_BZ2}
         - INSTALL_GD=${LARAVEL_HORIZON_INSTALL_GD}
         - INSTALL_GMP=${LARAVEL_HORIZON_INSTALL_GMP}
@@ -298,31 +300,31 @@ services:
 #    ports:
 #      - "${NGINX_HOST_HTTP_PORT}:80"
 #      - "${NGINX_HOST_HTTPS_PORT}:443"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.nginx.loadbalancer.server.port=80"
+#      # https router
+#      - "traefik.http.routers.https.rule=Host(`${ACME_DOMAIN}`, `www.${ACME_DOMAIN}`)"
+#      - "traefik.http.routers.https.entrypoints=http"
+#      - "traefik.http.routers.https.middlewares=www-redirectregex"
+#      - "traefik.http.routers.https.service=nginx"
+#      - "traefik.http.routers.https.tls.certresolver=letsencrypt"
+      # http router
+      - "traefik.http.routers.http.rule=Host(`${ACME_DOMAIN}`, `www.${ACME_DOMAIN}`)"
+      - "traefik.http.routers.http.entrypoints=http"
+#      - "traefik.http.routers.http.middlewares=http-redirectscheme"
+      - "traefik.http.routers.http.service=nginx"
+#      # middlewares
+#      - "traefik.http.middlewares.www-redirectregex.redirectregex.permanent=true"
+#      - "traefik.http.middlewares.www-redirectregex.redirectregex.regex=^https://www.(.*)"
+#      - "traefik.http.middlewares.www-redirectregex.redirectregex.replacement=https://$$1"
+#      - "traefik.http.middlewares.http-redirectscheme.redirectscheme.permanent=true"
+#      - "traefik.http.middlewares.http-redirectscheme.redirectscheme.scheme=http"
     depends_on:
       - php-fpm
     networks:
       - frontend
       - backend
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.services.nginx.loadbalancer.server.port=80"
-      # https router
-      - "traefik.http.routers.https.rule=Host(`${ACME_DOMAIN}`, `www.${ACME_DOMAIN}`)"
-      - "traefik.http.routers.https.entrypoints=https"
-      - "traefik.http.routers.https.middlewares=www-redirectregex"
-      - "traefik.http.routers.https.service=nginx"
-      - "traefik.http.routers.https.tls.certresolver=letsencrypt"
-      # http router
-      - "traefik.http.routers.http.rule=Host(`${ACME_DOMAIN}`, `www.${ACME_DOMAIN}`)"
-      - "traefik.http.routers.http.entrypoints=http"
-      - "traefik.http.routers.http.middlewares=http-redirectscheme"
-      - "traefik.http.routers.http.service=nginx"
-      # middlewares
-      - "traefik.http.middlewares.www-redirectregex.redirectregex.permanent=true"
-      - "traefik.http.middlewares.www-redirectregex.redirectregex.regex=^https://www.(.*)"
-      - "traefik.http.middlewares.www-redirectregex.redirectregex.replacement=https://$$1"
-      - "traefik.http.middlewares.http-redirectscheme.redirectscheme.permanent=true"
-      - "traefik.http.middlewares.http-redirectscheme.redirectscheme.scheme=https"
 
   apache2:
     build:
@@ -416,7 +418,7 @@ services:
       - "${RABBITMQ_MANAGEMENT_HTTPS_HOST_PORT}:15671"
       - "${RABBITMQ_WEB_STOMP_HOST_PORT}:15674"
     privileged: true
-    hostname: spacedock-rabbitmq
+    hostname: laradock-rabbitmq
     volumes:
       - ${DATA_PATH_HOST}/rabbitmq:/var/lib/rabbitmq
       - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
@@ -440,6 +442,26 @@ services:
       - "${PMA_PORT}:80"
     depends_on:
       - "${PMA_DB_ENGINE}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.nginx.loadbalancer.server.port=8081"
+#      # https router
+#      - "traefik.http.routers.https.rule=Host(`phpmyadmin.${ACME_DOMAIN}`, `www.phpmyadmin.${ACME_DOMAIN}`)"
+#      - "traefik.http.routers.https.entrypoints=http"
+#      - "traefik.http.routers.https.middlewares=www-redirectregex"
+#      - "traefik.http.routers.https.service=nginx"
+#      - "traefik.http.routers.https.tls.certresolver=letsencrypt"
+      # http router
+      - "traefik.http.routers.http.rule=Host(`phpmyadmin.${ACME_DOMAIN}`, `www.phpmyadmin.${ACME_DOMAIN}`)"
+      - "traefik.http.routers.http.entrypoints=http"
+#      - "traefik.http.routers.http.middlewares=http-redirectscheme"
+      - "traefik.http.routers.http.service=nginx"
+#      # middlewares
+#      - "traefik.http.middlewares.www-redirectregex.redirectregex.permanent=true"
+#      - "traefik.http.middlewares.www-redirectregex.redirectregex.regex=^https://www.(.*)"
+#      - "traefik.http.middlewares.www-redirectregex.redirectregex.replacement=https://$$1"
+#      - "traefik.http.middlewares.http-redirectscheme.redirectscheme.permanent=true"
+#      - "traefik.http.middlewares.http-redirectscheme.redirectscheme.scheme=http"
     networks:
       - frontend
       - backend
@@ -455,6 +477,26 @@ services:
       - "${ADM_PORT}:8080"
     depends_on:
       - php-fpm
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.nginx.loadbalancer.server.port=8081"
+#      # https router
+#      - "traefik.http.routers.https.rule=Host(`adminer.${ACME_DOMAIN}`, `www.adminer.${ACME_DOMAIN}`)"
+#      - "traefik.http.routers.https.entrypoints=http"
+#      - "traefik.http.routers.https.middlewares=www-redirectregex"
+#      - "traefik.http.routers.https.service=nginx"
+#      - "traefik.http.routers.https.tls.certresolver=letsencrypt"
+      # http router
+      - "traefik.http.routers.http.rule=Host(`adminer.${ACME_DOMAIN}`, `www.adminer.${ACME_DOMAIN}`)"
+      - "traefik.http.routers.http.entrypoints=http"
+#      - "traefik.http.routers.http.middlewares=http-redirectscheme"
+      - "traefik.http.routers.http.service=nginx"
+#      # middlewares
+#      - "traefik.http.middlewares.www-redirectregex.redirectregex.permanent=true"
+#      - "traefik.http.middlewares.www-redirectregex.redirectregex.regex=^https://www.(.*)"
+#      - "traefik.http.middlewares.www-redirectregex.redirectregex.replacement=https://$$1"
+#      - "traefik.http.middlewares.http-redirectscheme.redirectscheme.permanent=true"
+#      - "traefik.http.middlewares.http-redirectscheme.redirectscheme.scheme=http"
     networks:
       - frontend
       - backend
@@ -472,6 +514,18 @@ services:
       - frontend
       - backend
 
+  certbot:
+    build:
+      context: ./certbot
+    volumes:
+      - ./data/certbot/certs/:/var/certs
+      - ./certbot/letsencrypt/:/var/www/letsencrypt
+    environment:
+      - CN="fake.domain.com"
+      - EMAIL="fake.email@gmail.com"
+    networks:
+      - frontend
+
   traefik:
     build:
       context: ./traefik
@@ -484,16 +538,17 @@ services:
       - "--accesslog.filepath=/data/access.log"
       # entrypoints
       - "--entrypoints.http.address=:${TRAEFIK_HOST_HTTP_PORT}"
-      - "--entrypoints.http.http.redirections.entrypoint.to=https"
-      - "--entrypoints.https.address=:${TRAEFIK_HOST_HTTPS_PORT}"
+#      - "--entrypoints.http.http.redirections.entrypoint.to=https"
+#      - "--entrypoints.https.address=:${TRAEFIK_HOST_HTTPS_PORT}"
       - "--entrypoints.traefik.address=:${TRAEFIK_DASHBOARD_PORT}"
-      # certificatesresolvers
-      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/data/acme.json"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=http"
+#      # certificatesresolvers
+#      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+#      - "--certificatesresolvers.letsencrypt.acme.storage=/data/acme.json"
+#      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=http"
     ports:
       - "${TRAEFIK_HOST_HTTP_PORT}:${TRAEFIK_HOST_HTTP_PORT}"
-      - "${TRAEFIK_HOST_HTTPS_PORT}:${TRAEFIK_HOST_HTTPS_PORT}"
+      - "${TRAEFIK_HOST_HTTP_ADM_PORT}:${TRAEFIK_HOST_HTTP_ADM_PORT}"
+#      - "${TRAEFIK_HOST_HTTPS_PORT}:${TRAEFIK_HOST_HTTPS_PORT}"
       - "${TRAEFIK_DASHBOARD_PORT}:${TRAEFIK_DASHBOARD_PORT}"
     networks:
       - frontend
@@ -504,7 +559,7 @@ services:
       - "traefik.http.routers.traefik.entrypoints=traefik"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.middlewares=access-auth"
-      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+#      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
       - "traefik.http.middlewares.access-auth.basicauth.realm=Login Required"
       - "traefik.http.middlewares.access-auth.basicauth.users=${TRAEFIK_DASHBOARD_USER}"
 

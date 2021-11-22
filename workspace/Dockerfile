@@ -12,11 +12,11 @@
 # Note: Base Image name format {image-tag}-{php-version}
 #
 
-ARG SPACEDOCK_PHP_VERSION
+ARG LARADOCK_PHP_VERSION
 ARG BASE_IMAGE_TAG_PREFIX=latest
-FROM laradock/workspace:${BASE_IMAGE_TAG_PREFIX}-${SPACEDOCK_PHP_VERSION}
+FROM laradock/workspace:${BASE_IMAGE_TAG_PREFIX}-${LARADOCK_PHP_VERSION}
 
-ARG SPACEDOCK_PHP_VERSION
+ARG LARADOCK_PHP_VERSION
 
 # Set Environment Variables
 ENV DEBIAN_FRONTEND noninteractive
@@ -25,7 +25,7 @@ ENV DEBIAN_FRONTEND noninteractive
 USER root
 
 ###########################################################################
-# Spacedock non-root user:
+# Laradock non-root user:
 ###########################################################################
 
 # Add a non-root user to prevent files being created with root permissions on host machine.
@@ -38,11 +38,11 @@ ENV PGID ${PGID}
 RUN set -xe; \
     apt-get update -yqq && \
     pecl channel-update pecl.php.net && \
-    groupadd -g ${PGID} spacedock && \
-    useradd -l -u ${PUID} -g spacedock -m spacedock -G docker_env && \
-    usermod -p "*" spacedock -s /bin/bash && \
+    groupadd -g ${PGID} laradock && \
+    useradd -l -u ${PUID} -g laradock -m laradock -G docker_env && \
+    usermod -p "*" laradock -s /bin/bash && \
     apt-get install -yqq \
-      libargon2-1 libidn2-0 libpcre2-8-0 libpcre3 libxml2 libzstd1 \
+      libargon2-1 libidn2-0 libpcre2-8-0 libpcre3 libxml2 libzstd1 mc \
       apt-utils \
       #
       #--------------------------------------------------------------------------
@@ -57,7 +57,7 @@ RUN set -xe; \
       # next lines are here because there is no auto build on dockerhub see https://github.com/laradock/laradock/pull/1903#issuecomment-463142846
       libzip-dev zip unzip \
       # Install the zip extension
-      php${SPACEDOCK_PHP_VERSION}-zip \
+      php${LARADOCK_PHP_VERSION}-zip \
       # nasm
       nasm && \
       php -m | grep -q 'zip'
@@ -90,17 +90,17 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 USER root
 
 COPY ./aliases.sh /root/aliases.sh
-COPY ./aliases.sh /home/spacedock/aliases.sh
+COPY ./aliases.sh /home/laradock/aliases.sh
 
 RUN sed -i 's/\r//' /root/aliases.sh && \
-    sed -i 's/\r//' /home/spacedock/aliases.sh && \
-    chown spacedock:spacedock /home/spacedock/aliases.sh && \
+    sed -i 's/\r//' /home/laradock/aliases.sh && \
+    chown laradock:laradock /home/laradock/aliases.sh && \
     echo "" >> ~/.bashrc && \
     echo "# Load Custom Aliases" >> ~/.bashrc && \
     echo "source ~/aliases.sh" >> ~/.bashrc && \
 	  echo "" >> ~/.bashrc
 
-USER spacedock
+USER laradock
 
 RUN echo "" >> ~/.bashrc && \
     echo "# Load Custom Aliases" >> ~/.bashrc && \
@@ -114,13 +114,13 @@ RUN echo "" >> ~/.bashrc && \
 USER root
 
 # Add the composer.json
-COPY ./composer.json /home/spacedock/.composer/composer.json
+COPY ./composer.json /home/laradock/.composer/composer.json
 
 # Add the auth.json for magento 2 credentials
-COPY ./auth.json /home/spacedock/.composer/auth.json
+COPY ./auth.json /home/laradock/.composer/auth.json
 
-# Make sure that ~/.composer belongs to spacedock
-RUN chown -R spacedock:spacedock /home/spacedock/.composer
+# Make sure that ~/.composer belongs to laradock
+RUN chown -R laradock:laradock /home/laradock/.composer
 
 # Export composer vendor path
 RUN echo "" >> ~/.bashrc && \
@@ -136,7 +136,7 @@ RUN set -eux; \
           composer self-update ${COMPOSER_VERSION}; \
       fi
 
-USER spacedock
+USER laradock
 
 # Check if global install need to be ran
 ARG COMPOSER_GLOBAL_INSTALL=false
@@ -153,7 +153,7 @@ ENV COMPOSER_AUTH ${COMPOSER_AUTH}
 
 RUN if [ ${COMPOSER_AUTH} = false ]; then \
     # remove the file
-    rm /home/spacedock/.composer/auth.json \
+    rm /home/laradock/.composer/auth.json \
 ;fi
 
 ARG COMPOSER_REPO_PACKAGIST
@@ -172,7 +172,7 @@ RUN echo "" >> ~/.bashrc && \
 ###########################################################################
 
 # add ./vendor/bin to non-root user's bashrc (needed for phpunit)
-USER spacedock
+USER laradock
 
 RUN echo "" >> ~/.bashrc && \
     echo 'export PATH="/var/www/vendor/bin:$PATH"' >> ~/.bashrc
@@ -196,48 +196,48 @@ ARG INSTALL_GNUPG=false
 ARG INSTALL_SSH2=false
 ARG INSTALL_SOAP=false
 ARG INSTALL_XSL=false
-ARG PHP_VERSION=${SPACEDOCK_PHP_VERSION}
+ARG PHP_VERSION=${LARADOCK_PHP_VERSION}
 
 RUN set -eux; \
     ###########################################################################
     # BZ2:
     ###########################################################################
     if [ ${INSTALL_BZ2} = true ]; then \
-      apt-get -yqq install php${SPACEDOCK_PHP_VERSION}-bz2; \
+      apt-get -yqq install php${LARADOCK_PHP_VERSION}-bz2; \
     fi; \
     ###########################################################################
     # GMP (GNU Multiple Precision):
     ###########################################################################
     if [ ${INSTALL_GMP} = true ]; then \
       # Install the PHP GMP extension
-      apt-get -yqq install php${SPACEDOCK_PHP_VERSION}-gmp; \
+      apt-get -yqq install php${LARADOCK_PHP_VERSION}-gmp; \
     fi; \
     ###########################################################################
     # GnuPG:
     ###########################################################################
     if [ ${INSTALL_GNUPG} = true ]; then \
-        apt-get -yqq install php${SPACEDOCK_PHP_VERSION}-gnupg; \
+        apt-get -yqq install php${LARADOCK_PHP_VERSION}-gnupg; \
     fi; \
     ###########################################################################
     # SSH2:
     ###########################################################################
     if [ ${INSTALL_SSH2} = true ]; then \
       # Install the PHP SSH2 extension
-      apt-get -yqq install libssh2-1-dev php${SPACEDOCK_PHP_VERSION}-ssh2; \
+      apt-get -yqq install libssh2-1-dev php${LARADOCK_PHP_VERSION}-ssh2; \
     fi; \
     ###########################################################################
     # SOAP:
     ###########################################################################
     if [ ${INSTALL_SOAP} = true ]; then \
       # Install the PHP SOAP extension
-      apt-get -yqq install libxml2-dev php${SPACEDOCK_PHP_VERSION}-soap; \
+      apt-get -yqq install libxml2-dev php${LARADOCK_PHP_VERSION}-soap; \
     fi; \
     ###########################################################################
     # XSL:
     ###########################################################################
     if [ ${INSTALL_XSL} = true ]; then \
       # Install the PHP XSL extension
-      apt-get -yqq install libxslt-dev php${SPACEDOCK_PHP_VERSION}-xsl; \
+      apt-get -yqq install libxslt-dev php${LARADOCK_PHP_VERSION}-xsl; \
     fi
 
 ###########################################################################
@@ -251,7 +251,7 @@ RUN set -eux; \
     # LDAP:
     ###########################################################################
     if [ ${INSTALL_LDAP} = true ]; then \
-        apt-get install -yqq libldap2-dev php${SPACEDOCK_PHP_VERSION}-ldap; \
+        apt-get install -yqq libldap2-dev php${LARADOCK_PHP_VERSION}-ldap; \
     fi; \
     ###########################################################################
     # SMB:
@@ -263,7 +263,7 @@ RUN set -eux; \
     # IMAP:
     ###########################################################################
     if [ ${INSTALL_IMAP} = true ]; then \
-        apt-get install -yqq php${SPACEDOCK_PHP_VERSION}-imap; \
+        apt-get install -yqq php${LARADOCK_PHP_VERSION}-imap; \
     fi;
 
 ###########################################################################
@@ -298,26 +298,26 @@ RUN if [ ${INSTALL_XDEBUG} = true ]; then \
       fi \
     fi \
   fi && \
-  echo "zend_extension=xdebug.so" >> /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/20-xdebug.ini \
+  echo "zend_extension=xdebug.so" >> /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-xdebug.ini \
 ;fi
 
 # ADD for REMOTE debugging
-COPY ./xdebug.ini /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/xdebug.ini
+COPY ./xdebug.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/xdebug.ini
 
 RUN if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-  sed -i "s/xdebug.remote_host=/xdebug.client_host=/" /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.remote_connect_back=0/xdebug.discover_client_host=false/" /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.remote_port=9000/xdebug.client_port=9003/" /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.profiler_enable=0/; xdebug.profiler_enable=0/" /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.profiler_output_dir=/xdebug.output_dir=/" /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.remote_mode=req/; xdebug.remote_mode=req/" /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.remote_autostart=0/xdebug.start_with_request=yes/" /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.remote_enable=0/xdebug.mode=debug/" /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/xdebug.ini \
+  sed -i "s/xdebug.remote_host=/xdebug.client_host=/" /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
+  sed -i "s/xdebug.remote_connect_back=0/xdebug.discover_client_host=false/" /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
+  sed -i "s/xdebug.remote_port=9000/xdebug.client_port=9003/" /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
+  sed -i "s/xdebug.profiler_enable=0/; xdebug.profiler_enable=0/" /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
+  sed -i "s/xdebug.profiler_output_dir=/xdebug.output_dir=/" /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
+  sed -i "s/xdebug.remote_mode=req/; xdebug.remote_mode=req/" /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
+  sed -i "s/xdebug.remote_autostart=0/xdebug.start_with_request=yes/" /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
+  sed -i "s/xdebug.remote_enable=0/xdebug.mode=debug/" /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/xdebug.ini \
 ;else \
-  sed -i "s/xdebug.remote_autostart=0/xdebug.remote_autostart=1/" /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
-  sed -i "s/xdebug.remote_enable=0/xdebug.remote_enable=1/" /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/xdebug.ini \
+  sed -i "s/xdebug.remote_autostart=0/xdebug.remote_autostart=1/" /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/xdebug.ini && \
+  sed -i "s/xdebug.remote_enable=0/xdebug.remote_enable=1/" /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/xdebug.ini \
 ;fi
-RUN sed -i "s/xdebug.cli_color=0/xdebug.cli_color=1/" /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/xdebug.ini
+RUN sed -i "s/xdebug.cli_color=0/xdebug.cli_color=1/" /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/xdebug.ini
 
 ###########################################################################
 # pcov:
@@ -331,8 +331,8 @@ RUN if [ ${INSTALL_PCOV} = true ]; then \
   if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
     if [ $(php -r "echo PHP_MINOR_VERSION;") != "0" ]; then \
       pecl install pcov && \
-      echo "extension=pcov.so" >> /etc/php/${SPACEDOCK_PHP_VERSION}/cli/php.ini && \
-      echo "pcov.enabled" >> /etc/php/${SPACEDOCK_PHP_VERSION}/cli/php.ini \
+      echo "extension=pcov.so" >> /etc/php/${LARADOCK_PHP_VERSION}/cli/php.ini && \
+      echo "pcov.enabled" >> /etc/php/${LARADOCK_PHP_VERSION}/cli/php.ini \
     ;fi \
   ;fi \
 ;fi
@@ -348,7 +348,7 @@ ARG INSTALL_PHPDBG=false
 
 RUN if [ ${INSTALL_PHPDBG} = true ]; then \
     # Load the xdebug extension only with phpunit commands
-    apt-get install -y --force-yes php${SPACEDOCK_PHP_VERSION}-phpdbg \
+    apt-get install -y --force-yes php${LARADOCK_PHP_VERSION}-phpdbg \
 ;fi
 
 ###########################################################################
@@ -368,8 +368,8 @@ RUN if [ ${INSTALL_WORKSPACE_SSH} = true ]; then \
         && rm -f /tmp/id_rsa* \
         && chmod 644 /root/.ssh/authorized_keys /root/.ssh/id_rsa.pub \
     && chmod 400 /root/.ssh/id_rsa \
-    && cp -rf /root/.ssh /home/spacedock \
-    && chown -R spacedock:spacedock /home/spacedock/.ssh \
+    && cp -rf /root/.ssh /home/laradock \
+    && chown -R laradock:laradock /home/laradock/.ssh \
 ;fi
 
 ###########################################################################
@@ -385,8 +385,8 @@ RUN if [ ${INSTALL_AMQP} = true ]; then \
     else \
       printf "\n" | pecl install amqp; \
     fi && \
-    echo "extension=amqp.so" >> /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/amqp.ini && \
-    ln -s /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/amqp.ini /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/30-amqp.ini \
+    echo "extension=amqp.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/amqp.ini && \
+    ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/amqp.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-amqp.ini \
 ;fi
 
 ###########################################################################
@@ -396,7 +396,7 @@ RUN if [ ${INSTALL_AMQP} = true ]; then \
 ARG INSTALL_PHPREDIS=false
 
 RUN if [ ${INSTALL_PHPREDIS} = true ]; then \
-    apt-get install -yqq php${SPACEDOCK_PHP_VERSION}-redis \
+    apt-get install -yqq php${LARADOCK_PHP_VERSION}-redis \
 ;fi
 
 ###########################################################################
@@ -417,8 +417,8 @@ RUN set -eux; \
       else \
         echo '' | pecl -q install swoole; \
       fi; \
-      echo "extension=swoole.so" >> /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/swoole.ini; \
-      ln -s /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/swoole.ini /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/20-swoole.ini; \
+      echo "extension=swoole.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/swoole.ini; \
+      ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/swoole.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-swoole.ini; \
       php -m | grep -q 'swoole'; \
     fi
 
@@ -432,8 +432,8 @@ RUN if [ "${INSTALL_TAINT}" = true ]; then \
     # Install Php TAINT Extension
     if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
       pecl install taint && \
-      echo "extension=taint.so" >> /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/taint.ini && \
-      ln -s /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/taint.ini /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/20-taint.ini && \
+      echo "extension=taint.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/taint.ini && \
+      ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/taint.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-taint.ini && \
       php -m | grep -q 'taint'; \
     fi \
 ;fi
@@ -457,12 +457,12 @@ ARG INSTALL_INOTIFY=false
 RUN if [ ${INSTALL_INOTIFY} = true ]; then \
     if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
       pecl -q install inotify-0.1.6 && \
-      echo "extension=inotify.so" >> /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/inotify.ini && \
-      ln -s /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/inotify.ini /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/20-inotify.ini; \
+      echo "extension=inotify.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/inotify.ini && \
+      ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/inotify.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-inotify.ini; \
     else \
       pecl -q install inotify && \
-      echo "extension=inotify.so" >> /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/inotify.ini && \
-      ln -s /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/inotify.ini /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/20-inotify.ini \
+      echo "extension=inotify.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/inotify.ini && \
+      ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/inotify.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-inotify.ini \
     ;fi \
 ;fi
 
@@ -479,8 +479,8 @@ RUN if [ ${INSTALL_AST} = true ]; then \
     if [ $(php -r "echo PHP_MAJOR_VERSION;") != "5" ]; then \
         # Install AST extension
         printf "\n" | pecl -q install ast-${AST_VERSION} && \
-        echo "extension=ast.so" >> /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/ast.ini && \
-        phpenmod -v ${SPACEDOCK_PHP_VERSION} -s cli ast \
+        echo "extension=ast.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/ast.ini && \
+        phpenmod -v ${LARADOCK_PHP_VERSION} -s cli ast \
     ;fi \
 ;fi
 
@@ -518,9 +518,9 @@ RUN if [ ${INSTALL_IONCUBE} = true ]; then \
       # Install the php ioncube loader
       curl -L -o /tmp/ioncube_loaders_lin_x86-64.tar.gz https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz \
       && tar zxpf /tmp/ioncube_loaders_lin_x86-64.tar.gz -C /tmp \
-      && mv /tmp/ioncube/ioncube_loader_lin_${SPACEDOCK_PHP_VERSION}.so $(php -r "echo ini_get('extension_dir');")/ioncube_loader.so \
-      && echo "zend_extension=ioncube_loader.so" >> /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/ioncube.ini \
-      && ln -s /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/ioncube.ini /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/0ioncube.ini \
+      && mv /tmp/ioncube/ioncube_loader_lin_${LARADOCK_PHP_VERSION}.so $(php -r "echo ini_get('extension_dir');")/ioncube_loader.so \
+      && echo "zend_extension=ioncube_loader.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/ioncube.ini \
+      && ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/ioncube.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/0ioncube.ini \
       && rm -rf /tmp/ioncube* \
       && php -m | grep -oiE '^ionCube Loader$' \
     ;fi \
@@ -547,7 +547,7 @@ ARG NPM_FETCH_RETRY_MINTIMEOUT
 ENV NPM_FETCH_RETRY_MINTIMEOUT ${NPM_FETCH_RETRY_MINTIMEOUT}
 ARG NPM_FETCH_RETRY_MAXTIMEOUT
 ENV NPM_FETCH_RETRY_MAXTIMEOUT ${NPM_FETCH_RETRY_MAXTIMEOUT}
-ENV NVM_DIR /home/spacedock/.nvm
+ENV NVM_DIR /home/laradock/.nvm
 ARG NVM_NODEJS_ORG_MIRROR
 ENV NVM_NODEJS_ORG_MIRROR ${NVM_NODEJS_ORG_MIRROR}
 
@@ -575,7 +575,7 @@ RUN if [ ${INSTALL_NODE} = true ]; then \
         && if [ ${INSTALL_NPM_VUE_CLI} = true ]; then \
         npm install -g @vue/cli \
         ;fi \
-        && ln -s `npm bin --global` /home/spacedock/.node-bin \
+        && ln -s `npm bin --global` /home/laradock/.node-bin \
 ;fi
 
 # Wouldn't execute when added to the RUN statement in the above block
@@ -591,12 +591,12 @@ USER root
 
 RUN if [ ${INSTALL_NODE} = true ]; then \
     echo "" >> ~/.bashrc && \
-    echo 'export NVM_DIR="/home/spacedock/.nvm"' >> ~/.bashrc && \
+    echo 'export NVM_DIR="/home/laradock/.nvm"' >> ~/.bashrc && \
     echo '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm' >> ~/.bashrc \
 ;fi
 
 # Add PATH for node
-ENV PATH $PATH:/home/spacedock/.node-bin
+ENV PATH $PATH:/home/laradock/.node-bin
 
 # Make it so the node modules can be executed with 'docker-compose exec'
 # We'll create symbolic links into '/usr/local/bin'.
@@ -618,14 +618,14 @@ RUN if [ ${NPM_REGISTRY} ]; then \
 
 # Mount .npmrc into home folder
 COPY ./.npmrc /root/.npmrc
-COPY ./.npmrc /home/spacedock/.npmrc
+COPY ./.npmrc /home/laradock/.npmrc
 
 
 ###########################################################################
 # PNPM:
 ###########################################################################
 
-USER spacedock
+USER laradock
 
 ARG INSTALL_PNPM=false
 
@@ -638,7 +638,7 @@ RUN if [ ${INSTALL_PNPM} = true ]; then \
 # YARN:
 ###########################################################################
 
-USER spacedock
+USER laradock
 
 ARG INSTALL_YARN=false
 ARG YARN_VERSION=latest
@@ -660,12 +660,12 @@ USER root
 
 RUN if [ ${INSTALL_YARN} = true ]; then \
     echo "" >> ~/.bashrc && \
-    echo 'export YARN_DIR="/home/spacedock/.yarn"' >> ~/.bashrc && \
+    echo 'export YARN_DIR="/home/laradock/.yarn"' >> ~/.bashrc && \
     echo 'export PATH="$YARN_DIR/bin:$PATH"' >> ~/.bashrc \
 ;fi
 
 # Add PATH for YARN
-ENV PATH $PATH:/home/spacedock/.yarn/bin
+ENV PATH $PATH:/home/laradock/.yarn/bin
 
 ###########################################################################
 # PHP OCI8:
@@ -707,7 +707,7 @@ RUN if [ ${INSTALL_OCI8} = true ]; then \
   else \
     echo 'instantclient,/opt/oracle/instantclient_12_1/' | pecl install oci8; \
   fi \
-  && echo "extension=oci8.so" >> /etc/php/${SPACEDOCK_PHP_VERSION}/cli/php.ini \
+  && echo "extension=oci8.so" >> /etc/php/${LARADOCK_PHP_VERSION}/cli/php.ini \
   && php -m | grep -q 'oci8' \
 ;fi
 
@@ -729,7 +729,7 @@ RUN set -xe; \
     else \
       pecl install v8js; \
     fi \
-    && echo "extension=v8js.so" >> /etc/php/${SPACEDOCK_PHP_VERSION}/cli/php.ini \
+    && echo "extension=v8js.so" >> /etc/php/${LARADOCK_PHP_VERSION}/cli/php.ini \
     && php -m | grep -q 'v8js' \
   ;fi
 
@@ -737,7 +737,7 @@ RUN set -xe; \
 # Laravel Envoy:
 ###########################################################################
 
-USER spacedock
+USER laradock
 
 ARG INSTALL_LARAVEL_ENVOY=false
 
@@ -750,7 +750,7 @@ RUN if [ ${INSTALL_LARAVEL_ENVOY} = true ]; then \
 # Laravel Installer:
 ###########################################################################
 
-USER spacedock
+USER laradock
 
 ARG INSTALL_LARAVEL_INSTALLER=false
 
@@ -840,7 +840,7 @@ RUN if [ ${INSTALL_IMAGE_OPTIMIZERS} = true ]; then \
     ;fi\
 ;fi
 
-USER spacedock
+USER laradock
 
 ###########################################################################
 # Symfony:
@@ -917,7 +917,7 @@ RUN if [ ${INSTALL_SUPERVISOR} = true ]; then \
   ;fi \
 ;fi
 
-USER spacedock
+USER laradock
 
 ###########################################################################
 # ImageMagick:
@@ -948,8 +948,8 @@ RUN if [ ${INSTALL_IMAGEMAGICK} = true ]; then \
     else \
       pecl install imagick; \
     fi && \
-    echo "extension=imagick.so" >> /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/imagick.ini && \
-    ln -s /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/imagick.ini /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/20-imagick.ini && \
+    echo "extension=imagick.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/imagick.ini && \
+    ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/imagick.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-imagick.ini && \
     php -m | grep -q 'imagick' \
 ;fi
 
@@ -976,8 +976,8 @@ RUN if [ ${INSTALL_TERRAFORM} = true ]; then \
 ARG INSTALL_MEMCACHED=false
 
 RUN if [ ${INSTALL_MEMCACHED} = true ]; then \
-  apt-get -y install php${SPACEDOCK_PHP_VERSION}-igbinary \
-  && apt-get -y install php${SPACEDOCK_PHP_VERSION}-memcached \
+  apt-get -y install php${LARADOCK_PHP_VERSION}-igbinary \
+  && apt-get -y install php${LARADOCK_PHP_VERSION}-memcached \
 ;fi
 
 ###########################################################################
@@ -1079,8 +1079,8 @@ RUN set -eux; \
     else \
         echo '' | pecl install yaml; \
     fi; \
-    echo "extension=yaml.so" >> /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/yaml.ini; \
-    ln -s /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/yaml.ini /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/35-yaml.ini; \
+    echo "extension=yaml.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/yaml.ini; \
+    ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/yaml.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/35-yaml.ini; \
   fi; \
   ###########################################################################
   # FFMpeg:
@@ -1180,7 +1180,7 @@ RUN if [ ${INSTALL_GIT_PROMPT} = true ]; then \
 ARG INSTALL_XMLRPC=false
 
 RUN if [ ${INSTALL_XMLRPC} = true ]; then \
-    apt-get install -yqq php${SPACEDOCK_PHP_VERSION}-xmlrpc \
+    apt-get install -yqq php${LARADOCK_PHP_VERSION}-xmlrpc \
 ;fi
 
 ###########################################################################
@@ -1220,7 +1220,85 @@ RUN if [ ${INSTALL_PROTOC} = true ]; then \
 # Check PHP version:
 ###########################################################################
 
-RUN set -xe; php -v | head -n 1 | grep -q "PHP ${SPACEDOCK_PHP_VERSION}."
+RUN set -xe; php -v | head -n 1 | grep -q "PHP ${LARADOCK_PHP_VERSION}."
+
+###########################################################################
+# Oh My ZSH!
+###########################################################################
+
+USER root
+
+ARG SHELL_OH_MY_ZSH=false
+RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
+    apt install -y zsh \
+;fi
+
+ARG SHELL_OH_MY_ZSH_AUTOSUGESTIONS=false
+ARG SHELL_OH_MY_ZSH_ALIASES=false
+
+USER laradock
+RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh) --keep-zshrc" && \
+    sed -i -r 's/^plugins=\(.*?\)$/plugins=(laravel5)/' /home/laradock/.zshrc && \
+    echo '\n\
+bindkey "^[OB" down-line-or-search\n\
+bindkey "^[OC" forward-char\n\
+bindkey "^[OD" backward-char\n\
+bindkey "^[OF" end-of-line\n\
+bindkey "^[OH" beginning-of-line\n\
+bindkey "^[[1~" beginning-of-line\n\
+bindkey "^[[3~" delete-char\n\
+bindkey "^[[4~" end-of-line\n\
+bindkey "^[[5~" up-line-or-history\n\
+bindkey "^[[6~" down-line-or-history\n\
+bindkey "^?" backward-delete-char\n' >> /home/laradock/.zshrc && \
+  if [ ${SHELL_OH_MY_ZSH_AUTOSUGESTIONS} = true ]; then \
+    sh -c "git clone https://github.com/zsh-users/zsh-autosuggestions /home/laradock/.oh-my-zsh/custom/plugins/zsh-autosuggestions" && \
+    sed -i 's~plugins=(~plugins=(zsh-autosuggestions ~g' /home/laradock/.zshrc && \
+    sed -i '1iZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20' /home/laradock/.zshrc && \
+    sed -i '1iZSH_AUTOSUGGEST_STRATEGY=(history completion)' /home/laradock/.zshrc && \
+    sed -i '1iZSH_AUTOSUGGEST_USE_ASYNC=1' /home/laradock/.zshrc && \
+    sed -i '1iTERM=xterm-256color' /home/laradock/.zshrc \
+  ;fi && \
+  if [ ${SHELL_OH_MY_ZSH_ALIASES} = true ]; then \
+    echo "" >> /home/laradock/.zshrc && \
+    echo "# Load Custom Aliases" >> /home/laradock/.zshrc && \
+    echo "source /home/laradock/aliases.sh" >> /home/laradock/.zshrc && \
+    echo "" >> /home/laradock/.zshrc \
+  ;fi \
+;fi
+
+USER root
+
+###########################################################################
+# ZSH User Aliases
+###########################################################################
+
+USER root
+
+COPY ./aliases.sh /root/aliases.sh
+COPY ./aliases.sh /home/laradock/aliases.sh
+
+RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
+    sed -i 's/\r//' /root/aliases.sh && \
+    sed -i 's/\r//' /home/laradock/aliases.sh && \
+    chown laradock:laradock /home/laradock/aliases.sh && \
+    echo "" >> ~/.zshrc && \
+    echo "# Load Custom Aliases" >> ~/.zshrc && \
+    echo "source ~/aliases.sh" >> ~/.zshrc && \
+	  echo "" >> ~/.zshrc \
+;fi
+
+USER laradock
+
+RUN if [ ${SHELL_OH_MY_ZSH} = true ]; then \
+    echo "" >> ~/.zshrc && \
+    echo "# Load Custom Aliases" >> ~/.zshrc && \
+    echo "source ~/aliases.sh" >> ~/.zshrc && \
+	  echo "" >> ~/.zshrc \
+;fi
+
+USER root
 
 ###########################################################################
 # PHP DECIMAL:
@@ -1236,8 +1314,8 @@ RUN if [ ${INSTALL_PHPDECIMAL} = true ]; then \
     else \
       apt-get install -yqq libmpdec-dev \
       && pecl install decimal \
-      && echo "extension=decimal.so" >> /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/decimal.ini \
-      && ln -s /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/decimal.ini /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/30-decimal.ini \
+      && echo "extension=decimal.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/decimal.ini \
+      && ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/decimal.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-decimal.ini \
       && php -m | grep -q 'decimal' \
     ;fi \
 ;fi
@@ -1252,8 +1330,8 @@ ARG INSTALL_TRADER=false
 
 RUN if [ ${INSTALL_TRADER} = true ]; then \
     pecl install trader \
-    && echo "extension=trader.so" >> /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/trader.ini \
-    && ln -s /etc/php/${SPACEDOCK_PHP_VERSION}/mods-available/trader.ini /etc/php/${SPACEDOCK_PHP_VERSION}/cli/conf.d/20-trader.ini \
+    && echo "extension=trader.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/trader.ini \
+    && ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/trader.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-trader.ini \
 ;fi
 
 #

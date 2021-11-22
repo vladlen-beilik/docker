@@ -4,10 +4,10 @@
 #--------------------------------------------------------------------------
 #
 
-ARG SPACEDOCK_PHP_VERSION
-FROM php:${SPACEDOCK_PHP_VERSION}-alpine
+ARG LARADOCK_PHP_VERSION
+FROM php:${LARADOCK_PHP_VERSION}-alpine
 
-ARG SPACEDOCK_PHP_VERSION
+ARG LARADOCK_PHP_VERSION
 
 RUN apk --update add wget \
   curl \
@@ -36,8 +36,8 @@ ENV PUID ${PUID}
 ARG PGID=1000
 ENV PGID ${PGID}
 
-RUN addgroup -g ${PGID} spacedock && \
-  adduser -D -G spacedock -u ${PUID} spacedock
+RUN addgroup -g ${PGID} laradock && \
+  adduser -D -G laradock -u ${PUID} laradock
 
 #Install BZ2:
 ARG INSTALL_BZ2=false
@@ -182,7 +182,7 @@ ARG INSTALL_ZIP_ARCHIVE=false
 RUN set -eux; \
   if [ ${INSTALL_ZIP_ARCHIVE} = true ]; then \
   apk --update add libzip-dev && \
-  if [ ${SPACEDOCK_PHP_VERSION} = "7.3" ] || [ ${SPACEDOCK_PHP_VERSION} = "7.4" ] || [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
+  if [ ${LARADOCK_PHP_VERSION} = "7.3" ] || [ ${LARADOCK_PHP_VERSION} = "7.4" ] || [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
   docker-php-ext-configure zip; \
   else \
   docker-php-ext-configure zip --with-libzip; \

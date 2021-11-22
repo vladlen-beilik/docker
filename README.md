@@ -1,5 +1,5 @@
 # Introduction
-Spacedock is a full PHP development environment for Docker.
+Laradock is a full PHP development environment for Docker.
 
 It supports a variety of common services, all pre-configured to provide a ready PHP development environment.
 
@@ -11,7 +11,7 @@ It supports a variety of common services, all pre-configured to provide a ready 
 - Easy to customize any container, with simple edits to the `Dockerfile`.
 - All Images extend from an official base Image. (Trusted base Images).
 - Pre-configured NGINX to host any code at your root directory.
-- Can use Spacedock per project, or single Spacedock for all projects. 
+- Can use Laradock per project, or single Laradock for all projects. 
 - Clean and well-structured Dockerfiles (Dockerfile).
 - The Latest version of the Docker Compose file (docker-compose).
 - Everything is visible and editable.
@@ -20,7 +20,7 @@ It supports a variety of common services, all pre-configured to provide a ready 
 ## Quick Overview
 Let’s see how easy it is to setup our demo stack `PHP`, `NGINX`, `MySQL`, `Redis` and `Composer`:
 
-#### 1. Clone Spacedock inside your PHP project:
+#### 1. Clone Laradock inside your PHP project:
 `git submodule add https://github.com/spacecode-dev/docker.git`
 Note: If you are not using Git yet for your project, you can use `git clone` instead of `git submodule add`
 
