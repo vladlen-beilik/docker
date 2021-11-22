@@ -123,7 +123,6 @@ services:
     build:
       context: ./php-fpm
       args:
-        - CHANGE_SOURCE=${CHANGE_SOURCE}
         - BASE_IMAGE_TAG_PREFIX=${PHP_FPM_BASE_IMAGE_TAG_PREFIX}
         - SPACEDOCK_PHP_VERSION=${PHP_VERSION}
         - INSTALL_BZ2=${PHP_FPM_INSTALL_BZ2}
@@ -181,9 +180,6 @@ services:
         - PGID=${PHP_FPM_PGID}
         - IMAGEMAGICK_VERSION=${PHP_FPM_IMAGEMAGICK_VERSION}
         - LOCALE=${PHP_FPM_DEFAULT_LOCALE}
-        - PHP_FPM_NEW_RELIC=${PHP_FPM_NEW_RELIC}
-        - PHP_FPM_NEW_RELIC_KEY=${PHP_FPM_NEW_RELIC_KEY}
-        - PHP_FPM_NEW_RELIC_APP_NAME=${PHP_FPM_NEW_RELIC_APP_NAME}
         - INSTALL_DOCKER_CLIENT=${PHP_FPM_INSTALL_DOCKER_CLIENT}
         - http_proxy
         - https_proxy
@@ -212,11 +208,50 @@ services:
     links:
       - docker-in-docker
 
+  php-worker:
+    build:
+      context: ./php-worker
+      args:
+        - SPACEDOCK_PHP_VERSION=${PHP_VERSION}
+        - INSTALL_BZ2=${PHP_WORKER_INSTALL_BZ2}
+        - INSTALL_GD=${PHP_WORKER_INSTALL_GD}
+        - INSTALL_IMAGEMAGICK=${PHP_WORKER_INSTALL_IMAGEMAGICK}
+        - INSTALL_GMP=${PHP_WORKER_INSTALL_GMP}
+        - INSTALL_GNUPG=${PHP_WORKER_INSTALL_GNUPG}
+        - INSTALL_LDAP=${PHP_WORKER_INSTALL_LDAP}
+        - INSTALL_PGSQL=${PHP_WORKER_INSTALL_PGSQL}
+        - INSTALL_BCMATH=${PHP_WORKER_INSTALL_BCMATH}
+        - INSTALL_MEMCACHED=${PHP_WORKER_INSTALL_MEMCACHED}
+        - INSTALL_OCI8=${PHP_WORKER_INSTALL_OCI8}
+        - INSTALL_SOAP=${PHP_WORKER_INSTALL_SOAP}
+        - INSTALL_ZIP_ARCHIVE=${PHP_WORKER_INSTALL_ZIP_ARCHIVE}
+        - INSTALL_MYSQL_CLIENT=${PHP_WORKER_INSTALL_MYSQL_CLIENT}
+        - INSTALL_AMQP=${PHP_WORKER_INSTALL_AMQP}
+        - INSTALL_GHOSTSCRIPT=${PHP_WORKER_INSTALL_GHOSTSCRIPT}
+        - INSTALL_SWOOLE=${PHP_WORKER_INSTALL_SWOOLE}
+        - INSTALL_TAINT=${PHP_WORKER_INSTALL_TAINT}
+        - INSTALL_FFMPEG=${PHP_WORKER_INSTALL_FFMPEG}
+        - INSTALL_AUDIOWAVEFORM=${PHP_WORKER_INSTALL_AUDIOWAVEFORM}
+        - INSTALL_REDIS=${PHP_WORKER_INSTALL_REDIS}
+        - INSTALL_IMAP=${PHP_WORKER_INSTALL_IMAP}
+        - INSTALL_XMLRPC=${PHP_WORKER_INSTALL_XMLRPC}
+        - PUID=${PHP_WORKER_PUID}
+        - PGID=${PHP_WORKER_PGID}
+        - IMAGEMAGICK_VERSION=${PHP_WORKER_IMAGEMAGICK_VERSION}
+    volumes:
+      - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+      - ./php-worker/supervisord.d:/etc/supervisord.d
+    depends_on:
+      - workspace
+    extra_hosts:
+      - "dockerhost:${DOCKER_HOST_IP}"
+    networks:
+      - backend
+
   laravel-horizon:
     build:
       context: ./laravel-horizon
       args:
-        - CHANGE_SOURCE=${CHANGE_SOURCE}
         - SPACEDOCK_PHP_VERSION=${PHP_VERSION}
         - INSTALL_BZ2=${LARAVEL_HORIZON_INSTALL_BZ2}
         - INSTALL_GD=${LARAVEL_HORIZON_INSTALL_GD}
@@ -250,7 +285,6 @@ services:
     build:
       context: ./nginx
       args:
-        - CHANGE_SOURCE=${CHANGE_SOURCE}
         - PHP_UPSTREAM_CONTAINER=${NGINX_PHP_UPSTREAM_CONTAINER}
         - PHP_UPSTREAM_PORT=${NGINX_PHP_UPSTREAM_PORT}
         - http_proxy
@@ -260,16 +294,35 @@ services:
       - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
       - ${NGINX_HOST_LOG_PATH}:/var/log/nginx
       - ${NGINX_SITES_PATH}:/etc/nginx/sites-available
-      - ${NGINX_SSL_PATH}:/etc/nginx/ssl
-    ports:
-      - "${NGINX_HOST_HTTP_PORT}:80"
-      - "${NGINX_HOST_HTTPS_PORT}:443"
-      - "${VARNISH_BACKEND_PORT}:81"
+#      - ${NGINX_SSL_PATH}:/etc/nginx/ssl
+#    ports:
+#      - "${NGINX_HOST_HTTP_PORT}:80"
+#      - "${NGINX_HOST_HTTPS_PORT}:443"
     depends_on:
       - php-fpm
     networks:
       - frontend
       - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.nginx.loadbalancer.server.port=80"
+      # https router
+      - "traefik.http.routers.https.rule=Host(`${ACME_DOMAIN}`, `www.${ACME_DOMAIN}`)"
+      - "traefik.http.routers.https.entrypoints=https"
+      - "traefik.http.routers.https.middlewares=www-redirectregex"
+      - "traefik.http.routers.https.service=nginx"
+      - "traefik.http.routers.https.tls.certresolver=letsencrypt"
+      # http router
+      - "traefik.http.routers.http.rule=Host(`${ACME_DOMAIN}`, `www.${ACME_DOMAIN}`)"
+      - "traefik.http.routers.http.entrypoints=http"
+      - "traefik.http.routers.http.middlewares=http-redirectscheme"
+      - "traefik.http.routers.http.service=nginx"
+      # middlewares
+      - "traefik.http.middlewares.www-redirectregex.redirectregex.permanent=true"
+      - "traefik.http.middlewares.www-redirectregex.redirectregex.regex=^https://www.(.*)"
+      - "traefik.http.middlewares.www-redirectregex.redirectregex.replacement=https://$$1"
+      - "traefik.http.middlewares.http-redirectscheme.redirectscheme.permanent=true"
+      - "traefik.http.middlewares.http-redirectscheme.redirectscheme.scheme=https"
 
   apache2:
     build:
@@ -405,32 +458,10 @@ services:
     networks:
       - frontend
       - backend
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.services.nginx.loadbalancer.server.port=80"
-      # https router
-      - "traefik.http.routers.https.rule=Host(`adminer.${ACME_DOMAIN}`, `www.adminer.${ACME_DOMAIN}`)"
-      - "traefik.http.routers.https.entrypoints=https"
-      - "traefik.http.routers.https.middlewares=www-redirectregex"
-      - "traefik.http.routers.https.service=nginx"
-      - "traefik.http.routers.https.tls.certresolver=letsencrypt"
-      # http router
-      - "traefik.http.routers.http.rule=Host(`adminer.${ACME_DOMAIN}`, `www.adminer.${ACME_DOMAIN}`)"
-      - "traefik.http.routers.http.entrypoints=http"
-      - "traefik.http.routers.http.middlewares=http-redirectscheme"
-      - "traefik.http.routers.http.service=nginx"
-      # middlewares
-      - "traefik.http.middlewares.www-redirectregex.redirectregex.permanent=true"
-      - "traefik.http.middlewares.www-redirectregex.redirectregex.regex=^https://www.(.*)"
-      - "traefik.http.middlewares.www-redirectregex.redirectregex.replacement=https://$$1"
-      - "traefik.http.middlewares.http-redirectscheme.redirectscheme.permanent=true"
-      - "traefik.http.middlewares.http-redirectscheme.redirectscheme.scheme=https"
 
   laravel-echo-server:
     build:
       context: ./laravel-echo-server
-      args:
-        - CHANGE_SOURCE=${CHANGE_SOURCE}
     volumes:
       - ./laravel-echo-server/laravel-echo-server.json:/app/laravel-echo-server.json:ro
     ports:
@@ -502,8 +533,6 @@ networks:
     driver: ${NETWORKS_DRIVER}
   backend:
     driver: ${NETWORKS_DRIVER}
-#  traefik:
-#    external: true
 
 volumes:
   mysql:
