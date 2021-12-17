@@ -1,0 +1,13 @@
+#!/usr/bin/make
+
+export BASH=bash
+DOCKER_DIR=docker
+
+up:
+	cd $(DOCKER_DIR) && exec docker-compose up -d nginx php-worker redis mariadb adminer laravel-echo-server traefik
+
+down:
+	cd $(DOCKER_DIR) && exec docker-compose down
+
+cli:
+	cd $(DOCKER_DIR) && exec docker-compose exec --user=laradock workspace zsh
