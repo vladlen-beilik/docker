@@ -9,6 +9,14 @@ FROM php:${LARADOCK_PHP_VERSION}-alpine
 
 ARG LARADOCK_PHP_VERSION
 
+# If you're in China, or you need to change sources, will be set CHANGE_SOURCE to true in .env.
+
+ARG CHANGE_SOURCE=false
+RUN if [ ${CHANGE_SOURCE} = true ]; then \
+  # Change application source from dl-cdn.alpinelinux.org to aliyun source
+  sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/' /etc/apk/repositories \
+  ;fi
+
 RUN apk --update add wget \
   curl \
   git \
@@ -28,7 +36,12 @@ RUN apk --update add wget \
 
 
 RUN pecl channel-update pecl.php.net; \
-  docker-php-ext-install mysqli mbstring pdo pdo_mysql tokenizer xml pcntl
+  docker-php-ext-install mysqli mbstring pdo pdo_mysql xml pcntl; \
+  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "1" ]; then \
+    php -m | grep -q 'tokenizer'; \
+  else \
+    docker-php-ext-install tokenizer; \
+  fi
 
 # Add a non-root user:
 ARG PUID=1000
@@ -55,11 +68,7 @@ ARG INSTALL_GNUPG=false
 RUN set -eux; if [ ${INSTALL_GNUPG} = true ]; then \
   apk add --no-cache --no-progress --virtual BUILD_DEPS_PHP_GNUPG gpgme-dev; \
   apk add --no-cache --no-progress gpgme; \
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-  pecl install gnupg-1.5.0RC2; \
-  else \
   pecl install gnupg; \
-  fi; \
   docker-php-ext-enable gnupg; \
   fi
 
@@ -76,7 +85,7 @@ ARG INSTALL_GD=false
 RUN if [ ${INSTALL_GD} = true ]; then \
   apk add --update --no-cache freetype-dev libjpeg-turbo-dev jpeg-dev libpng-dev; \
   if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ]; then \
-  docker-php-ext-configure gd --with-freetype --with-jpeg --with-png; \
+  docker-php-ext-configure gd --with-freetype --with-jpeg; \
   else \
   docker-php-ext-configure gd --with-freetype-dir=/usr/lib/ --with-jpeg-dir=/usr/lib/ --with-png-dir=/usr/lib/; \
   fi; \
@@ -128,6 +137,24 @@ ARG INSTALL_SOAP=false
 RUN if [ ${INSTALL_SOAP} = true ]; then \
   docker-php-ext-install soap \
   ;fi
+
+# Install MongoDB drivers:
+ARG INSTALL_MONGO=false
+RUN if [ ${INSTALL_MONGO} = true ]; then \
+    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
+      pecl install mongo; \
+      docker-php-ext-enable mongo; \
+      php -m | grep -oiE '^mongo$'; \
+    else \
+      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && { [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "1" ] ;}; then \
+        pecl install mongodb-1.9.2; \
+      else \
+        pecl install mongodb; \
+      fi; \
+      docker-php-ext-enable mongodb; \
+      php -m | grep -oiE '^mongodb$'; \
+    fi; \
+  fi
 
 ###########################################################################
 # PHP OCI8:
@@ -233,15 +260,71 @@ RUN if [ ${INSTALL_AUDIOWAVEFORM} = true ]; then \
 ARG INSTALL_AMQP=false
 
 RUN if [ ${INSTALL_AMQP} = true ]; then \
+  docker-php-ext-install sockets; \
   apk --update add -q rabbitmq-c rabbitmq-c-dev && \
   if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-  printf "\n" | pecl install amqp-1.11.0beta; \
+    printf "\n" | pecl install amqp-1.11.0; \
   else \
-  printf "\n" | pecl install amqp; \
+    printf "\n" | pecl install amqp; \
   fi && \
-  docker-php-ext-enable amqp && \
-  apk del -q rabbitmq-c-dev && \
-  docker-php-ext-install sockets \
+    docker-php-ext-enable amqp && \
+    apk del -q rabbitmq-c-dev; \
+    php -m | grep -oiE '^amqp$' \
+  ;fi
+
+# Install Gearman:
+ARG INSTALL_GEARMAN=false
+
+RUN if [ ${INSTALL_GEARMAN} = true ]; then \
+  sed -i "\$ahttp://dl-cdn.alpinelinux.org/alpine/edge/main" /etc/apk/repositories && \
+  sed -i "\$ahttp://dl-cdn.alpinelinux.org/alpine/edge/community" /etc/apk/repositories && \
+  sed -i "\$ahttp://dl-cdn.alpinelinux.org/alpine/edge/testing" /etc/apk/repositories && \
+  apk --update add php7-gearman && \
+  sh -c 'echo "extension=/usr/lib/php7/modules/gearman.so" > /usr/local/etc/php/conf.d/gearman.ini' \
+  ;fi
+
+# Install Cassandra drivers:
+ARG INSTALL_CASSANDRA=false
+RUN if [ ${INSTALL_CASSANDRA} = true ]; then \
+  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
+  echo "PHP Driver for Cassandra is not supported for PHP 8.0."; \
+  else \
+  apk add --update --no-cache cassandra-cpp-driver libuv gmp \
+  && apk add --update --no-cache cassandra-cpp-driver-dev gmp-dev --virtual .build-sec \
+  && cd /usr/src \
+  && git clone https://github.com/datastax/php-driver.git \
+  && cd php-driver/ext \
+  && phpize \
+  && mkdir -p /usr/src/php-driver/build \
+  && cd /usr/src/php-driver/build \
+  && ../ext/configure > /dev/null \
+  && make clean > /dev/null \
+  && make > /dev/null 2>&1 \
+  && make install \
+  && docker-php-ext-enable cassandra \
+  && apk del .build-sec; \
+  fi \
+  ;fi
+
+# Install Phalcon ext
+ARG INSTALL_PHALCON=false
+ARG PHALCON_VERSION
+ENV PHALCON_VERSION ${PHALCON_VERSION}
+
+RUN if [ $INSTALL_PHALCON = true ]; then \
+  apk --update add unzip gcc make re2c bash\
+  && git clone https://github.com/jbboehr/php-psr.git \
+  && cd php-psr \
+  && phpize \
+  && ./configure \
+  && make \
+  && make test \
+  && make install \
+  && curl -L -o /tmp/cphalcon.zip https://github.com/phalcon/cphalcon/archive/v${PHALCON_VERSION}.zip \
+  && unzip -d /tmp/ /tmp/cphalcon.zip \
+  && cd /tmp/cphalcon-${PHALCON_VERSION}/build \
+  && ./install \
+  && rm -rf /tmp/cphalcon* \
   ;fi
 
 ARG INSTALL_GHOSTSCRIPT=false
@@ -285,6 +368,24 @@ RUN set -eux; \
   fi
 
 ###########################################################################
+# xlswriter:
+###########################################################################
+
+ARG INSTALL_XLSWRITER=false
+
+RUN set -eux; \
+    if [ ${INSTALL_XLSWRITER} = true ]; then \
+      # Install Php xlswriter Extension \
+      if   [ $(php -r "echo PHP_MAJOR_VERSION;") != "5" ]; then \
+          pecl install xlswriter && \
+          docker-php-ext-enable xlswriter && \
+          php -m | grep -q 'xlswriter'; \
+      else \
+          echo "PHP Extension for xlswriter is not supported for PHP 5.0"; \
+      fi \
+    ;fi
+
+###########################################################################
 # Taint EXTENSION
 ###########################################################################
 
@@ -321,7 +422,7 @@ ARG INSTALL_XMLRPC=false
 
 RUN if [ ${INSTALL_XMLRPC} = true ]; then \
   if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-  pecl install xmlrpc-1.0.0RC2; \
+  pecl install xmlrpc-1.0.0RC3; \
   docker-php-ext-enable xmlrpc; \
   else \
   docker-php-ext-install xmlrpc; \
@@ -346,6 +447,64 @@ RUN if [ ${INSTALL_MEMCACHED} = true ]; then \
   docker-php-ext-enable memcached; \
   php -m | grep -r 'memcached'; \
   fi
+
+###########################################################################
+# SQL SERVER:
+###########################################################################
+
+ARG INSTALL_MSSQL=false
+
+RUN set -eux; \
+  if [ ${INSTALL_MSSQL} = true ]; then \
+  apk add --update gnupg \
+  ###########################################################################
+  # Ref from:
+  # - https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15#alpine17
+  ###########################################################################
+  # Add Microsoft repo for Microsoft ODBC Driver 17 for Linux
+  # Driver version 17.5 or higher is required for Alpine support.
+  # Download the desired package(s)
+  && curl -O https://download.microsoft.com/download/e/4/e/e4e67866-dffd-428c-aac7-8d28ddafb39b/msodbcsql17_17.8.1.1-1_amd64.apk \
+  # Verify signature, if 'gpg' is missing install it using 'apk add gnupg':
+  && curl -O https://download.microsoft.com/download/e/4/e/e4e67866-dffd-428c-aac7-8d28ddafb39b/msodbcsql17_17.8.1.1-1_amd64.sig \
+  && curl https://packages.microsoft.com/keys/microsoft.asc  | gpg --import - \
+  && gpg --verify msodbcsql17_17.8.1.1-1_amd64.sig msodbcsql17_17.8.1.1-1_amd64.apk \
+  # Install the package(s)
+  && apk add --allow-untrusted msodbcsql17_17.8.1.1-1_amd64.apk unixodbc-dev \
+  && pecl install sqlsrv pdo_sqlsrv \
+  # && echo extension=pdo_sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.*:\s*||"`/10_pdo_sqlsrv.ini
+  # && echo extension=sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.*:\s*||"`/00_sqlsrv.ini
+  && docker-php-ext-enable pdo_sqlsrv sqlsrv \
+  && php -m | grep -q 'pdo_sqlsrv' \
+  && php -m | grep -q 'sqlsrv' \
+  ;fi
+
+###########################################################################
+# PHP SSDB:
+###########################################################################
+
+USER root
+
+ARG INSTALL_SSDB=false
+
+RUN set -xe; \
+  if [ ${INSTALL_SSDB} = true ] && [ $(php -r "echo PHP_MAJOR_VERSION;") != "8" ]; then \
+  apk --update add sudo wget && \
+  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
+  curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/php7.tar.gz; \
+  else \
+  curl -L -o /tmp/ssdb-client-php.tar.gz https://github.com/jonnywang/phpssdb/archive/master.tar.gz; \
+  fi \
+  && mkdir -p /tmp/ssdb-client-php \
+  && tar -C /tmp/ssdb-client-php -zxvf /tmp/ssdb-client-php.tar.gz --strip 1 \
+  && cd /tmp/ssdb-client-php \
+  && phpize \
+  && ./configure \
+  && make \
+  && make install \
+  && rm /tmp/ssdb-client-php.tar.gz \
+  && docker-php-ext-enable ssdb \
+  ;fi
 
 #
 #--------------------------------------------------------------------------

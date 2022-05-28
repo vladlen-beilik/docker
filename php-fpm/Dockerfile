@@ -41,14 +41,14 @@ RUN set -xe; \
       #
       # next lines are here becase there is no auto build on dockerhub see https://github.com/laradock/laradock/pull/1903#issuecomment-463142846
       libzip-dev zip unzip && \
-      if [ ${LARADOCK_PHP_VERSION} = "7.3" ] || [ ${LARADOCK_PHP_VERSION} = "7.4" ] || [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-        docker-php-ext-configure zip; \
-      else \
-        docker-php-ext-configure zip --with-libzip; \
-      fi && \
-      # Install the zip extension
-      docker-php-ext-install zip && \
-      php -m | grep -q 'zip'
+        if [ ${LARADOCK_PHP_VERSION} = "7.3" ] || [ ${LARADOCK_PHP_VERSION} = "7.4" ] || [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
+          docker-php-ext-configure zip; \
+        else \
+          docker-php-ext-configure zip --with-libzip; \
+        fi && \
+        # Install the zip extension
+        docker-php-ext-install zip && \
+        php -m | grep -q 'zip'
 
 #
 #--------------------------------------------------------------------------
@@ -105,11 +105,7 @@ ARG INSTALL_GNUPG=false
 
 RUN if [ ${INSTALL_GNUPG} = true ]; then \
       apt-get -yq install libgpgme-dev; \
-      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-        pecl install gnupg-1.5.0RC2; \
-      else \
-        pecl install gnupg; \
-      fi; \
+      pecl install gnupg; \
       docker-php-ext-enable gnupg; \
       php -m | grep -q 'gnupg'; \
     fi
@@ -209,7 +205,7 @@ RUN if [ ${INSTALL_XDEBUG} = true ]; then \
   # Install the xdebug extension
   # https://xdebug.org/docs/compat
   if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] || { [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && { [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "3" ] ;} ;}; then \
-    pecl install xdebug-3.1.1; \
+    pecl install xdebug-3.1.2; \
   else \
     if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
       pecl install xdebug-2.5.5; \
@@ -382,6 +378,23 @@ RUN set -eux; \
     fi
 
 ###########################################################################
+# xlswriter:
+###########################################################################
+
+ARG INSTALL_XLSWRITER=false
+RUN set -eux; \
+    if [ ${INSTALL_XLSWRITER} = true ]; then \
+      # Install Php xlswriter Extension \
+      if [ $(php -r "echo PHP_MAJOR_VERSION;") != "5" ]; then \
+          pecl install xlswriter  &&\
+          docker-php-ext-enable xlswriter &&\
+          php -m | grep -q 'xlswriter'; \
+      else \
+          echo "PHP Extension for xlswriter is not supported for PHP 5.0";\
+      fi \
+    ;fi
+
+###########################################################################
 # pcntl
 ###########################################################################
 
@@ -465,6 +478,8 @@ RUN if [ ${INSTALL_OCI8} = true ]; then \
       echo 'instantclient,/opt/oracle/instantclient_12_1/' | pecl install oci8-2.0.12; \
     elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
       echo 'instantclient,/opt/oracle/instantclient_12_1/' | pecl install oci8-2.2.0; \
+    elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
+      echo 'instantclient,/opt/oracle/instantclient_12_1/' | pecl install oci8-3.0.1; \
     else \
       echo 'instantclient,/opt/oracle/instantclient_12_1/' | pecl install oci8; \
     fi \
@@ -516,7 +531,6 @@ ARG INSTALL_MYSQLI=false
 RUN if [ ${INSTALL_MYSQLI} = true ]; then \
     docker-php-ext-install mysqli \
 ;fi
-
 
 ###########################################################################
 # Human Language and Character Encoding Support:
@@ -861,7 +875,7 @@ ARG INSTALL_XMLRPC=false
 RUN if [ ${INSTALL_XMLRPC} = true ]; then \
   apt-get -yq install libxml2-dev; \
   if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-    pecl install xmlrpc-1.0.0RC2; \
+    pecl install xmlrpc-1.0.0RC3; \
     docker-php-ext-enable xmlrpc; \
   else \
     docker-php-ext-install xmlrpc; \

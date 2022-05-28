@@ -42,7 +42,6 @@ RUN set -xe; \
     useradd -l -u ${PUID} -g laradock -m laradock -G docker_env && \
     usermod -p "*" laradock -s /bin/bash && \
     apt-get install -yqq \
-      libargon2-1 libidn2-0 libpcre2-8-0 libpcre3 libxml2 libzstd1 mc \
       apt-utils \
       #
       #--------------------------------------------------------------------------
@@ -148,10 +147,10 @@ RUN if [ ${COMPOSER_GLOBAL_INSTALL} = true ]; then \
 ;fi
 
 # Check if auth file is disabled
-ARG COMPOSER_AUTH=false
-ENV COMPOSER_AUTH ${COMPOSER_AUTH}
+ARG COMPOSER_AUTH_JSON=false
+ENV COMPOSER_AUTH_JSON ${COMPOSER_AUTH_JSON}
 
-RUN if [ ${COMPOSER_AUTH} = false ]; then \
+RUN if [ ${COMPOSER_AUTH_JSON} = false ]; then \
     # remove the file
     rm /home/laradock/.composer/auth.json \
 ;fi
@@ -245,6 +244,7 @@ RUN set -eux; \
 ARG INSTALL_LDAP=false
 ARG INSTALL_SMB=false
 ARG INSTALL_IMAP=false
+ARG INSTALL_SUBVERSION=false
 
 RUN set -eux; \
     ###########################################################################
@@ -257,14 +257,20 @@ RUN set -eux; \
     # SMB:
     ###########################################################################
     if [ ${INSTALL_SMB} = true ]; then \
-        apt-get install -yqq smbclient php-smbclient coreutils; \
+        apt-get install -yqq smbclient php${LARADOCK_PHP_VERSION}-smbclient coreutils; \
     fi; \
     ###########################################################################
     # IMAP:
     ###########################################################################
     if [ ${INSTALL_IMAP} = true ]; then \
         apt-get install -yqq php${LARADOCK_PHP_VERSION}-imap; \
-    fi;
+    fi; \
+    ###########################################################################
+    # Subversion:
+    ###########################################################################
+    if [ ${INSTALL_SUBVERSION} = true ]; then \
+        apt-get install -yqq subversion; \
+    fi
 
 ###########################################################################
 # xDebug:
@@ -276,25 +282,18 @@ ARG INSTALL_XDEBUG=false
 
 RUN if [ ${INSTALL_XDEBUG} = true ]; then \
   # Install the xdebug extension
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-    pecl install xdebug-3.0.0; \
+  # https://xdebug.org/docs/compat
+  apt-get install -yqq pkg-config php-xml php${LARADOCK_PHP_VERSION}-xml && \
+  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] || { [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && { [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "3" ] ;} ;}; then \
+    pecl install xdebug-3.1.2; \
   else \
     if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
       pecl install xdebug-2.5.5; \
     else \
-      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
+      if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
         pecl install xdebug-2.9.0; \
       else \
-        if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "1" ]; then \
-          pecl install xdebug-2.9.8; \
-        else \
-          if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-            pecl install xdebug-2.9.8; \
-          else \
-            #pecl install xdebug; \
-            echo "xDebug 3 required, not supported."; \
-          fi \
-        fi \
+        pecl install xdebug-2.9.8; \
       fi \
     fi \
   fi && \
@@ -336,7 +335,6 @@ RUN if [ ${INSTALL_PCOV} = true ]; then \
     ;fi \
   ;fi \
 ;fi
-
 
 ###########################################################################
 # Phpdbg:
@@ -408,11 +406,11 @@ ARG INSTALL_SWOOLE=false
 RUN set -eux; \
     if [ ${INSTALL_SWOOLE} = true ]; then \
       # Install Php Swoole Extension
-      if   [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "50600" ]; then \
+      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
         echo '' | pecl -q install swoole-2.0.10; \
-      elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70000" ]; then \
+      elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
         echo '' | pecl -q install swoole-4.3.5; \
-      elif [ $(php -r "echo PHP_VERSION_ID - PHP_RELEASE_VERSION;") = "70100" ]; then \
+      elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "1" ]; then \
         echo '' | pecl -q install swoole-4.5.11; \
       else \
         echo '' | pecl -q install swoole; \
@@ -421,6 +419,24 @@ RUN set -eux; \
       ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/swoole.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-swoole.ini; \
       php -m | grep -q 'swoole'; \
     fi
+
+###########################################################################
+# xlswriter:
+###########################################################################
+
+ARG INSTALL_XLSWRITER=false
+RUN set -eux; \
+    if [ ${INSTALL_XLSWRITER} = true ]; then \
+      # Install Php xlswriter Extension
+      if [ $(php -r "echo PHP_MAJOR_VERSION;") != "5" ]; then \
+        echo '' | pecl -q install xlswriter && \
+        echo "extension=xlswriter.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/xlswriter.ini && \
+        ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/xlswriter.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-xlswriter.ini && \
+        php -m | grep -q 'xlswriter'; \
+      else \
+        echo "PHP Extension for xlswriter is not supported for PHP 5.0"; \
+      fi \
+    ;fi
 
 ###########################################################################
 # Taint EXTENSION
