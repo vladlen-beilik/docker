@@ -20,7 +20,7 @@ It supports a variety of common services, all pre-configured to provide a ready 
 ## Quick Overview
 Let’s see how easy it is to set up our demo stack `PHP`, `NGINX`, `MySQL`, `Redis` and `Composer`:
 
-#### 1. Clone Repository inside your PHP project: `git submodule add https://github.com/spacecode-dev/docker.git`.
+#### 1. Clone Repository inside your PHP project: `git submodule add https://github.com/vladlen-beilik/docker.git`.
 Note: If you are not using Git yet for your project, you can use `git clone` instead of `git submodule add`
 
 #### 2. Enter the docker folder and rename `.env.example` to `.env` and change variables.
